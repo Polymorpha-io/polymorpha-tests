@@ -3,23 +3,30 @@
   "private": false,
   "version": "0.1.0",
   "type": "module",
-  "description": "Central test registry for Polymorpha ecosystem — library for @polymorpha/business-logic and polymorpha (GitHub-only, no local fallback)",
+  "description": "Central test registry for Polymorpha ecosystem — library for @polymorpha/business-logic, @polymorpha/stella and polymorpha (GitHub-only, no local fallback G15/G15b)",
   "license": "MIT",
   "exports": {
     "./suites/*": "./suites/*",
     "./fixtures/*": "./fixtures/*",
     "./generators/*": "./suites/polymorpha/tests/generators/*"
   },
-  "files": ["suites/", "fixtures/", "scripts/", "vite.config.ts", "playwright.config.ts"],
+  "files": [
+    "suites/",
+    "fixtures/",
+    "scripts/",
+    "vite.config.ts",
+    "playwright.config.ts"
+  ],
   "scripts": {
     "sync": "node scripts/sync.mjs",
     "sync:check": "node scripts/sync.mjs --check",
     "test": "npm run test:all",
-    "test:all": "npm run test:ui && npm run test:api && npm run test:python",
+    "test:all": "npm run test:ui && npm run test:api && npm run test:python && npm run test:stella",
     "test:ui": "vitest run --reporter=verbose",
     "test:api": "vitest run --config vite.api.config.ts --reporter=verbose",
     "test:e2e": "playwright test",
     "test:python": "python -m pytest suites/business-logic/python -v --tb=short",
+    "test:stella": "python -m pytest suites/stella/python -v --tb=short && npx vitest run suites/stella/unit --reporter=verbose",
     "test:watch": "vitest",
     "lint": "eslint .",
     "format": "prettier --write \"suites/**/*.{ts,tsx,py}\" \"scripts/**/*.{js,mjs}\"",
@@ -28,7 +35,8 @@
     "typecheck": "tsc -b --noEmit"
   },
   "peerDependencies": {
-    "@polymorpha/business-logic": "git+https://github.com/Polymorpha-io/polymorpha-business-logic.git#main"
+    "@polymorpha/business-logic": "git+https://github.com/Polymorpha-io/polymorpha-business-logic.git#main",
+    "@polymorpha/stella": "git+https://github.com/Polymorpha-io/polymorpha-stella.git#main"
   },
   "devDependencies": {
     "@playwright/test": "^1.54.0",
