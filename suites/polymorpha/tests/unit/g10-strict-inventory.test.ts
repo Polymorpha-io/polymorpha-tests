@@ -11,7 +11,9 @@ function resolveSrcPath(p: string): string {
 
 function tscShowConfig(tsconfig: string): string {
   try {
-    return execSync(`npx tsc -p ${tsconfig} --showConfig`, { encoding: "utf-8" });
+    return execSync(`npx tsc -p ${tsconfig} --showConfig`, {
+      encoding: "utf-8",
+    });
   } catch {
     const alt = `suites/polymorpha/${tsconfig}`;
     if (existsSync(alt)) {
@@ -47,18 +49,25 @@ describe("P1-A G10 strict inventory", () => {
         // Match `any` as type, not in comment
         return /\bany\b/.test(line) && /:\s*any\b|as\s+any\b|<any>/.test(line);
       });
-      expect(anyLines, `${resolved} should have 0 any, found: ${anyLines.join("\n")}`).toHaveLength(0);
+      expect(
+        anyLines,
+        `${resolved} should have 0 any, found: ${anyLines.join("\n")}`,
+      ).toHaveLength(0);
     }
   });
 
-  it("production any count decreased after top 3 fix (162 -> <162)", { timeout: 15000 }, () => {
-    const before = 162;
-    const srcDir = existsSync("src") ? "src" : "suites/polymorpha/src";
-    const out = execSync(
-      `powershell -Command "Get-ChildItem -Path ${srcDir} -Recurse -Include *.ts,*.tsx | Select-String -Pattern ':\\s*any\\b|as\\s+any\\b|<any\\b|Record<.*any' | Measure-Object | Select-Object -ExpandProperty Count"`,
-      { encoding: "utf-8" },
-    );
-    const count = parseInt(out.trim(), 10);
-    expect(count).toBeLessThan(before);
-  });
+  it(
+    "production any count decreased after top 3 fix (162 -> <162)",
+    { timeout: 15000 },
+    () => {
+      const before = 162;
+      const srcDir = existsSync("src") ? "src" : "suites/polymorpha/src";
+      const out = execSync(
+        `powershell -Command "Get-ChildItem -Path ${srcDir} -Recurse -Include *.ts,*.tsx | Select-String -Pattern ':\\s*any\\b|as\\s+any\\b|<any\\b|Record<.*any' | Measure-Object | Select-Object -ExpandProperty Count"`,
+        { encoding: "utf-8" },
+      );
+      const count = parseInt(out.trim(), 10);
+      expect(count).toBeLessThan(before);
+    },
+  );
 });
