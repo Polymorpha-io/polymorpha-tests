@@ -11,8 +11,8 @@ dependencies = [
 dev = ["pytest>=7.0.0", "pytest-cov>=4.0.0"]
 
 [tool.pytest.ini_options]
-testpaths = ["suites/business-logic/python/polymorpha/tests", "suites/cloud-functions"]
-pythonpath = ["suites/business-logic/python"]
+testpaths = ["suites/business-logic/python/polymorpha/tests", "suites/stella/python/polymorpha_stella", "suites/cloud-functions"]
+pythonpath = ["suites/business-logic/python", "suites/stella/python"]
 addopts = "-v --tb=short"
 filterwarnings = [
   "ignore:invalid value encountered in divide",
