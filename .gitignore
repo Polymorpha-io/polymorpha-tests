@@ -1,4 +1,5 @@
 node_modules/
+suites/polymorpha/src/
 dist/
 .pytest_cache/
 __pycache__/
