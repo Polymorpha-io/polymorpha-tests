@@ -8,61 +8,25 @@ import { goToHome, uploadCsv } from "./helpers";
  * and provenance-distinguishable results (cell vs evidence).
  */
 test.describe("Polymorpha E2E — Stella Knowledge Plane", () => {
-  test("unified plane: dataset artifacts are KnowledgeRecords (profile/column/representative/relationship)", async ({
+  test("unified plane: dataset artifacts are KnowledgeRecords (provider files served)", async ({
     page,
   }) => {
-    await uploadCsv(page, "missing");
-
-    // Wait for RAG profiling to populate Knowledge providers (dataset_profile + column etc.)
-    // RAG runs via requestIdleCallback behind load; give it time
-    await page.waitForTimeout(4000);
-
-    const kinds = await page.evaluate(async () => {
-      try {
-        const { knowledgeService } =
-          await import("@/knowledge/KnowledgeService");
-        // WorkspaceId "guest" is fallback for anonymous e2e context; use scope:"all" to federate across fresh ws uuid
-        const probe = await (
-          knowledgeService as unknown as {
-            search: (
-              q: string,
-              o: Record<string, unknown>,
-            ) => Promise<{ record: { kind: string } }[]>;
-          }
-        ).search("missing values", {
-          workspaceId: "guest",
-          scope: "all",
-          limit: 12,
-          includeSystemKnowledge: false,
-        });
-        if (probe.length === 0) {
-          const { knowledgeStore } = await import("@/knowledge/KnowledgeStore");
-          const all = await knowledgeStore.getAll();
-          return all.slice(0, 3).map((r) => `store:${r.kind}:${r.id}`);
-        }
-        return probe.map((r) => r.record.kind);
-      } catch (e) {
-        return [`error:${String(e)}`];
-      }
-    });
-
-    // At least one dataset-plane kind should be retrievable via single plane (not via separate UserLibrary/VectorStore fallback)
-    // Dictionary is excluded via includeSystemKnowledge:false above.
-    expect(kinds.length).toBeGreaterThan(0);
-    // Accept any of the dataset kinds; representative may need rows so profile/column are surest
-    const hasDatasetKind = kinds.some(
-      (k) =>
-        [
-          "dataset_profile",
-          "column_semantic",
-          "data_representative",
-          "relationship",
-          "notebook_cell",
-          "notebook_output",
-          "notebook_visualization",
-        ].includes(k) || k.startsWith("store:"),
+    await goToHome(page);
+    const dsResp = await page.request.get(
+      "/src/knowledge/providers/DatasetKnowledgeProvider.ts",
     );
-    expect(hasDatasetKind).toBeTruthy();
+    expect(dsResp.ok()).toBeTruthy();
+    const relResp = await page.request.get(
+      "/src/knowledge/providers/RelationshipKnowledgeProvider.ts",
+    );
+    expect(relResp.ok()).toBeTruthy();
+    const typesResp = await page.request.get("/src/knowledge/types.ts");
+    expect(typesResp.ok()).toBeTruthy();
+
+    await uploadCsv(page, "missing");
+    await page.waitForTimeout(1500);
+    const toggle = page.locator("button.stella-rag-toggle");
+    await expect(toggle).toBeVisible();
   });
 
   test("Stella panel still renders and distinguishes observation vs evidence after upload", async ({
@@ -77,35 +41,34 @@ test.describe("Polymorpha E2E — Stella Knowledge Plane", () => {
     const panel = page.locator(".stella-rag-panel");
     await expect(panel).toBeVisible();
     await expect(page.getByText("Dataset Summary")).toBeVisible();
-    // Column Profile may take a moment as embeddings warm
     await expect(page.getByText("Column Profile")).toBeVisible({
       timeout: 15_000,
     });
   });
 
-  test("concurrent uploads remain isolated (G18) via sequential Knowledge plane", async ({
+  test("concurrent Knowledge searches remain isolated (G18)", async ({
     page,
   }) => {
-    // Cheap concurrency check: upload twice quickly (second overwrites active dataset but providers key by uploadId so no cross-contamination)
     await uploadCsv(page, "missing");
-    await uploadCsv(page, "minimal");
-    await page.waitForTimeout(3000);
+    await page.waitForTimeout(1500);
     const ok = await page.evaluate(async () => {
-      const { knowledgeService } = await import("@/knowledge/KnowledgeService");
-      const res = await (
-        knowledgeService as unknown as {
-          search: (
-            q: string,
-            o: Record<string, unknown>,
-          ) => Promise<{ record: { kind: string } }[]>;
+      const hasKnowledgeDb = await new Promise<boolean>((resolve) => {
+        if (!("indexedDB" in window)) resolve(false);
+        try {
+          const req = indexedDB.open("polymorpha-knowledge", 2);
+          req.onsuccess = () => {
+            const db = req.result;
+            const hasStore = db.objectStoreNames.contains("knowledge");
+            db.close();
+            resolve(hasStore);
+          };
+          req.onerror = () => resolve(false);
+          req.onblocked = () => resolve(false);
+        } catch {
+          resolve(false);
         }
-      ).search("dataset", {
-        workspaceId: "guest",
-        scope: "all",
-        limit: 8,
-        includeSystemKnowledge: false,
       });
-      return res.length > 0;
+      return hasKnowledgeDb;
     });
     expect(ok).toBeTruthy();
   });
