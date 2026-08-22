@@ -1,0 +1,14 @@
+functions-framework==3.*
+numpy>=1.26,<2
+pandas>=2.1,<3
+scipy>=1.12,<2
+statsmodels>=0.14,<1
+flask>=3.0,<4
+scikit-learn>=1.4,<2
+# Business-logic wheel — vendored for GCF (private repo, no token at build time)
+# Keep in sync with `npm install` source: git+https://github.com/Polymorpha-io/polymorpha-business-logic.git#main#subdirectory=python
+./polymorpha_stats-0.4.0-py3-none-any.whl
+joblib>=1.3,<2
+pydantic>=2.5,<3
+firebase-admin>=6.5,<7
+duckdb>=1.0,<2

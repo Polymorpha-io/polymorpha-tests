@@ -1,0 +1,7 @@
+[data-slot="sidebar-wrapper"] {
+  position: relative;
+}
+
+[data-sidebar="content"] {
+  overflow-x: hidden;
+}

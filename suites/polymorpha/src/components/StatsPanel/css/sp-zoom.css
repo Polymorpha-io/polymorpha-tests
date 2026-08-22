@@ -1,0 +1,58 @@
+﻿/* Normality zoom modal */
+.normality-zoom-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 24px;
+}
+.normality-zoom-modal {
+  background: var(--card);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  max-width: 700px;
+  width: 100%;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.normality-zoom-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.normality-zoom-head h3 {
+  margin: 0;
+  font-size: 1.3125rem;
+  font-weight: 700;
+  color: var(--foreground);
+}
+.normality-zoom-svg {
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--muted);
+  padding: 12px;
+}
+.normality-zoom-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  font-size: 0.875rem;
+  color: var(--foreground);
+}
+.normality-zoom-stats strong {
+  color: var(--foreground);
+}
+.normality-zoom-shape {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--muted-foreground);
+  font-style: italic;
+}
+

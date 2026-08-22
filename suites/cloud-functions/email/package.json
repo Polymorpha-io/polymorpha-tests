@@ -1,0 +1,13 @@
+{
+  "name": "polymorpha-email-function",
+  "version": "1.0.0",
+  "description": "Firebase Cloud Function to send feedback notification emails",
+  "main": "index.js",
+  "engines": {
+    "node": "20"
+  },
+  "dependencies": {
+    "firebase-admin": "^12.0.0",
+    "firebase-functions": "^5.0.0"
+  }
+}

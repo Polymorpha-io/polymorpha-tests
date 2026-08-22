@@ -1,0 +1,60 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "polymorpha-stats"
+version = "0.4.0"
+description = "Polymorpha statistical analysis and ML library — inferential stats only (parametric / non-parametric / correlation / regression)"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "pandas>=2.0.0",
+    "numpy>=1.24.0",
+    "scipy>=1.10.0",
+    "scikit-learn>=1.2.0",
+    "statsmodels>=0.14.0",
+    "pydantic>=2.0.0",
+    "mlxtend>=0.22.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "mypy>=1.0.0",
+    "ruff>=0.1.0",
+]
+
+[tool.setuptools.packages.find]
+include = ["polymorpha*"]
+
+[tool.pytest.ini_options]
+testpaths = ["polymorpha/tests"]
+pythonpath = ["."]
+addopts = "-v --tb=short"
+filterwarnings = [
+    # Expected: scipy divide-by-zero in ANOVA/Levene on edge data
+    "ignore:invalid value encountered in scalar divide:RuntimeWarning",
+    # Expected: numpy/scipy operations on data with missing values
+    "ignore:invalid value encountered in add:RuntimeWarning",
+    "ignore:invalid value encountered in subtract:RuntimeWarning",
+    "ignore:invalid value encountered in divide:RuntimeWarning",
+    # Expected: skewness/kurtosis on uniform (zero-variance) columns
+    "ignore:Precision loss occurred in moment calculation:RuntimeWarning",
+    # Expected: statsmodels VIF with single predictor (r²=1 → 1/0)
+    "ignore:divide by zero encountered in scalar divide:RuntimeWarning",
+]
+
+[tool.ruff]
+line-length = 119
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "UP"]
+
+[tool.mypy]
+python_version = "3.10"
+strict = true
+ignore_missing_imports = true
+warn_unused_ignores = true

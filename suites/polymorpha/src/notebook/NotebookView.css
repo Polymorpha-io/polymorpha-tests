@@ -1,0 +1,107 @@
+/* G24: Reuses plain CSS + CSS variables (C3), no new widget lib */
+.notebook-view {
+  border-top: 1px solid var(--border);
+  padding: 16px;
+  background: var(--card);
+}
+.notebook-view-header {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.notebook-view-title {
+  font-size: 14px;
+  font-weight: 650;
+}
+.notebook-view-subtitle {
+  font-size: 12px;
+  color: var(--muted-foreground);
+}
+.notebook-cells {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.notebook-cell {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: var(--background);
+}
+.notebook-cell--superseded {
+  opacity: 0.6;
+  border-style: dashed;
+}
+.notebook-cell--stale {
+  border-color: #f59e0b;
+}
+.notebook-cell-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+.notebook-cell-index {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+}
+.notebook-cell-type {
+  text-transform: uppercase;
+  font-size: 11px;
+  color: var(--muted-foreground);
+  letter-spacing: 0.04em;
+}
+.notebook-cell-title {
+  font-weight: 600;
+  flex: 1;
+}
+.notebook-cell-status {
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: var(--muted);
+}
+.status-active {
+  background: color-mix(in srgb, var(--primary) 15%, transparent);
+  color: var(--primary);
+}
+.status-superseded {
+  background: var(--muted);
+}
+.notebook-cell-op,
+.notebook-cell-cols {
+  font-size: 12px;
+  color: var(--muted-foreground);
+  margin-top: 4px;
+}
+.notebook-output {
+  font-size: 12px;
+  margin-top: 6px;
+  display: flex;
+  gap: 8px;
+}
+.notebook-cell-actions {
+  margin-top: 8px;
+  display: flex;
+  gap: 8px;
+}
+.btn-text {
+  font-size: 12px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: transparent;
+  cursor: pointer;
+}
+.btn-text:hover {
+  background: var(--muted);
+}

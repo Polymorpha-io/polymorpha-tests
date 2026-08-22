@@ -1,0 +1,10 @@
+treatment,response,block
+Control,23,1
+Control,25,2
+Control,22,3
+DrugA,30,1
+DrugA,32,2
+DrugA,28,3
+DrugB,18,1
+DrugB,20,2
+DrugB,19,3

@@ -1,0 +1,35 @@
+﻿
+.dict-seo-breadcrumb {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  font-size: 0.875rem;
+  margin-bottom: 16px;
+  color: var(--muted-foreground);
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: 9999px;
+  background: color-mix(in srgb, var(--muted) 78%, var(--card) 22%);
+}
+
+.dict-seo-topbar {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.dict-seo-breadcrumb a {
+  color: var(--primary);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.dict-seo-breadcrumb a:hover {
+  text-decoration: underline;
+}
+
+.dict-seo-breadcrumb-current {
+  font-weight: 500;
+  color: var(--foreground);
+}

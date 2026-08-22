@@ -1,0 +1,10 @@
+﻿/* Individual blob orbit animations */
+.about-blob-orb {
+  animation: about-blob-float 1.1s ease-out forwards;
+  cursor: pointer;
+  transform-origin: center center;
+}
+.about-blob-orb:hover path {
+  filter: brightness(1.3);
+}
+

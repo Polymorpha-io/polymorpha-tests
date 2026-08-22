@@ -1,0 +1,16 @@
+node_modules/
+dist/
+.pytest_cache/
+__pycache__/
+.coverage
+htmlcov/
+.playwright/
+test-results/
+blob-report/
+playwright-report/
+.auth/
+.env
+.venv/
+dist/
+.DS_Store
+Thumbs.db

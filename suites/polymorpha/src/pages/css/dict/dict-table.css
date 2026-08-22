@@ -1,0 +1,51 @@
+﻿
+.dict-seo-table-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 10px;
+}
+
+.dict-seo-table-title {
+  margin: 0 0 6px;
+  font-size: 0.875rem;
+  font-weight: 800;
+  color: var(--foreground);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.dict-seo-table {
+  width: 100%;
+  border-collapse: collapse;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.dict-seo-table th,
+.dict-seo-table td {
+  border: 1px solid var(--border);
+  padding: 8px 14px;
+  text-align: center;
+  font-size: 0.88rem;
+  line-height: 1.4;
+  vertical-align: middle;
+}
+
+@media (min-width: 1024px) {
+  .dict-seo-table {
+    table-layout: fixed;
+  }
+
+  .dict-seo-table th,
+  .dict-seo-table td {
+    padding: 8px 14px;
+    font-size: 0.88rem;
+  }
+}
+
+.dict-seo-table th {
+  background: color-mix(in srgb, var(--muted) 72%, var(--card) 28%);
+  color: var(--foreground);
+  font-weight: 900;
+}

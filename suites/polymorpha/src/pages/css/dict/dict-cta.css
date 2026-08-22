@@ -1,0 +1,56 @@
+﻿
+.dict-seo-list-card {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dict-seo-list-link {
+  color: var(--foreground);
+  text-decoration: none;
+  font-size: 1.125rem;
+  line-height: 1.25;
+}
+
+.dict-seo-list-link:hover {
+  color: var(--primary);
+}
+
+.dict-seo-cta-row,
+.dict-seo-nav-bottom {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.dict-seo-cta,
+.dict-seo-nav-bottom a {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 14px;
+  border-radius: 9999px;
+  border: 1px solid color-mix(in srgb, var(--primary) 30%, var(--border));
+  background: color-mix(in srgb, var(--primary) 10%, var(--background));
+  color: var(--primary);
+  font-weight: 700;
+  text-decoration: none;
+  transition:
+    transform 0.14s ease,
+    box-shadow 0.14s ease;
+}
+
+.dict-seo-cta:hover,
+.dict-seo-nav-bottom a:hover {
+  transform: translateY(-1px);
+  box-shadow:
+    0 1px 3px rgba(11, 18, 32, 0.08),
+    0 1px 2px rgba(11, 18, 32, 0.05);
+}
+
+.dict-seo-cta--secondary {
+  border-color: var(--border);
+  background: var(--card);
+  color: var(--foreground);
+}

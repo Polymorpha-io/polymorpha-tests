@@ -1,0 +1,14 @@
+﻿/* --- Section wrappers --- */
+.about-mission {
+  padding: 0 0 24px;
+  border-bottom: 1px solid var(--border);
+}
+
+.about-mission > h2 {
+  font-size: clamp(1.15rem, 1.4vw, 1.35rem);
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  margin: 0 0 16px;
+  color: var(--foreground);
+}
+

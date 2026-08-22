@@ -1,0 +1,12 @@
+﻿/*  CleaningPanel accordion  */
+.clean-quick-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+.accordion-toggle {
+  margin-left: auto;
+}
+

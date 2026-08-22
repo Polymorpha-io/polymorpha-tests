@@ -1,0 +1,8 @@
+service-account.json
+__pycache__/
+.pytest_cache/
+*.pyc
+.env
+.git
+.gitignore
+

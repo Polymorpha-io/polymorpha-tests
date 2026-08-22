@@ -1,0 +1,329 @@
+﻿/* --- Contact --- */
+.about-contact {
+  padding: 24px 0;
+}
+
+.about-contact h2 {
+  font-size: clamp(1.15rem, 1.4vw, 1.35rem);
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  margin: 0 0 16px;
+  color: var(--foreground);
+}
+
+.about-page-intro-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  background: transparent;
+}
+
+.about-page-intro-grid .about-page-section {
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  text-align: left;
+}
+
+.about-page-intro-grid .about-page-section .about-page-card-index {
+  display: block;
+  font-size: 1.6rem;
+  font-weight: 900;
+  line-height: 1;
+  margin-bottom: 0.15em;
+  color: color-mix(in srgb, var(--muted-foreground) 55%, transparent);
+  letter-spacing: 0;
+}
+
+.about-page-intro-grid .about-page-section p {
+  padding: 0;
+}
+
+.about-page-section {
+  padding: 0 0 10px;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 68%, transparent);
+}
+
+.about-page-section:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.about-page-section h3 {
+  margin: 0 0 6px;
+  font-size: clamp(1.15rem, 1.4vw, 1.35rem);
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: var(--foreground);
+}
+
+.about-page-card-index {
+  display: inline-block;
+  margin-bottom: 8px;
+  font-size: 0.65rem;
+  letter-spacing: 0.14em;
+  color: var(--muted-foreground);
+  font-weight: 700;
+}
+
+.about-page-section p {
+  margin: 0 0 8px;
+  padding: 0 8px;
+  line-height: 1.62;
+  color: var(--foreground);
+  max-width: 62ch;
+  font-size: 0.875rem;
+}
+
+.about-page-section p:last-child {
+  margin-bottom: 0;
+}
+
+.about-page-contact-note {
+  margin: 0 0 8px;
+  color: var(--muted-foreground);
+}
+.about-page-timeline {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.about-page-timeline-item {
+  position: relative;
+  padding-left: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-left: 6px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.25s ease,
+    background 0.25s ease,
+    border-left-color 0.25s ease;
+}
+
+.about-page-timeline-item:hover {
+  transform: translateY(-8px) scale(1.02);
+  box-shadow:
+    -6px 0 40px
+      color-mix(in srgb, var(--card-accent, var(--primary)) 60%, transparent),
+    0 12px 32px rgba(0, 0, 0, 0.1),
+    0 0 60px
+      color-mix(in srgb, var(--card-accent, var(--primary)) 18%, transparent) !important;
+  border-left-color: color-mix(
+    in srgb,
+    var(--card-accent) 80%,
+    #fff
+  ) !important;
+  background: color-mix(in srgb, var(--card-accent) 4%, var(--card));
+}
+
+.about-page-timeline-item {
+  animation: card-pulse-glow 3s ease-in-out infinite;
+}
+
+@keyframes card-pulse-glow {
+  0%,
+  100% {
+    border-left-color: var(--card-accent);
+    box-shadow:
+      -4px 0 24px color-mix(in srgb, var(--card-accent) 40%, transparent),
+      0 0 40px color-mix(in srgb, var(--card-accent) 13%, transparent),
+      -8px 0 32px color-mix(in srgb, var(--card-accent) 7%, transparent);
+  }
+  50% {
+    border-left-color: color-mix(in srgb, var(--card-accent) 60%, #fff);
+    box-shadow:
+      -4px 0 32px color-mix(in srgb, var(--card-accent) 70%, transparent),
+      0 0 56px color-mix(in srgb, var(--card-accent) 25%, transparent),
+      -8px 0 40px color-mix(in srgb, var(--card-accent) 15%, transparent);
+  }
+}
+
+.about-page-timeline-item::before,
+.about-page-timeline-item::after {
+  display: none;
+}
+
+.about-page-timeline-title {
+  font-weight: 700;
+  color: var(--foreground);
+}
+
+.about-page-timeline-note {
+  font-size: 0.875rem;
+  color: var(--muted-foreground);
+}
+
+.about-page-links {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 10px 0 0;
+}
+
+.about-team-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 12px 0 14px;
+}
+.about-team-photo {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--border);
+}
+.about-team-name {
+  margin: 0;
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--foreground);
+}
+.about-team-role {
+  margin: 2px 0 0;
+  font-size: 0.875rem;
+  color: var(--muted-foreground);
+}
+
+.about-page-links a {
+  color: #0c4f95;
+  text-decoration: none;
+  font-weight: 700;
+  background: linear-gradient(180deg, #f7fbff, #ebf4ff);
+  border: 1px solid #b8d1f2;
+  border-radius: 999px;
+  padding: 8px 13px;
+  font-size: 0.875rem;
+  line-height: 1.2;
+  transition:
+    background 0.15s,
+    border-color 0.15s,
+    color 0.15s,
+    box-shadow 0.15s,
+    transform 0.15s;
+  max-width: 100%;
+}
+.about-page-links a:hover {
+  background: #dbeafe;
+  border-color: #7baee3;
+  color: #0a3e74;
+  box-shadow:
+    0 0 10px rgba(59, 130, 246, 0.25),
+    0 2px 8px rgba(59, 130, 246, 0.1);
+  transform: translateY(-1px);
+  text-decoration: none;
+}
+
+.about-page-links a[href^="mailto:"] {
+  color: #164f86;
+  background: linear-gradient(180deg, #f5f9ff, #e8f1ff);
+}
+
+[data-theme="dark"] .about-page-links a {
+  color: #ffffff;
+  background: #1a1a1a;
+  border-color: #555555;
+}
+[data-theme="dark"] .about-page-links a:hover {
+  background: color-mix(in srgb, var(--primary) 10%, var(--background));
+  border-color: var(--primary);
+  color: var(--primary);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--primary) 35%, transparent);
+  transform: translateY(-1px);
+}
+[data-theme="dark"] .about-page-links a[href^="mailto:"] {
+  color: #ffffff;
+  background: #1a1a1a;
+}
+
+.about-page-link-with-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-right: 4px;
+}
+
+.about-page-link-with-icon svg {
+  width: 16px;
+  height: 16px;
+  fill: currentColor;
+}
+
+@media (max-width: 1024px) {
+  .header-beta-pill {
+    display: none;
+  }
+  .about-page-panel {
+    padding: 14px 14px 20px;
+  }
+  .about-page-head h2 {
+    font-size: 1.5rem;
+  }
+  .about-page-head p {
+    font-size: 1rem;
+  }
+  .about-page-intro-grid {
+    grid-template-columns: 1fr;
+  }
+  .about-blob-orb {
+    animation: about-blob-float 1.1s ease-out forwards;
+  }
+  .about-page-intro-grid .about-page-section:last-child {
+    margin-top: 0;
+    border-bottom: none;
+  }
+  .about-page-section h3 {
+    font-size: 1rem;
+  }
+  .about-page-section p {
+    max-width: none;
+  }
+  .about-roadmap {
+    padding: 20px 16px;
+    margin: 16px -14px 0;
+    border-radius: 8px;
+  }
+  .about-page-timeline {
+    grid-template-columns: 1fr;
+  }
+  .about-team-section,
+  .about-contact {
+    padding: 16px 0;
+  }
+  .about-team-section {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .about-page-links {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .about-page-links a {
+    font-size: 0.8125rem;
+    padding: 6px 10px;
+    word-break: break-all;
+  }
+  .about-page-timeline {
+    grid-template-columns: 1fr;
+  }
+  .about-blob-hero {
+    height: 100vh;
+  }
+  .about-blob-hero-svg {
+    width: 100%;
+    height: 90%;
+  }
+}

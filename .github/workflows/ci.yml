@@ -1,0 +1,58 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: "0 */6 * * *"
+  workflow_dispatch:
+
+jobs:
+  sync-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: git ls-remote https://github.com/Polymorpha-io/polymorpha.git HEAD
+      - run: git ls-remote https://github.com/Polymorpha-io/polymorpha-business-logic.git HEAD
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm ci || npm install
+      - run: node scripts/sync.mjs --check
+
+  ui:
+    runs-on: ubuntu-latest
+    needs: sync-check
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm ci || npm install
+      - run: npx vitest run --reporter=verbose
+
+  e2e:
+    runs-on: ubuntu-latest
+    needs: ui
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm ci || npm install
+      - run: npx playwright install --with-deps
+      - run: npx playwright test --reporter=list
+
+  python:
+    runs-on: ubuntu-latest
+    needs: sync-check
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r suites/business-logic/python/requirements.txt 2>/dev/null || pip install git+https://github.com/Polymorpha-io/polymorpha-business-logic.git#subdirectory=python
+      - run: pip install pytest pytest-cov
+      - run: python -m pytest suites/business-logic/python -v --tb=short

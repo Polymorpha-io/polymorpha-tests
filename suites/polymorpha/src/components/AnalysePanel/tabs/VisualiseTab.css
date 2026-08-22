@@ -1,0 +1,167 @@
+/* Visualise Tab */
+
+/* Visualise tab */
+.chart-body--full {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.vis-chart-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: 0 2px 12px rgba(11, 18, 32, 0.05);
+}
+.vis-chart-card .chart-controls {
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border);
+  background: color-mix(
+    in srgb,
+    var(--card) 88%,
+    color-mix(in srgb, var(--primary) 10%, var(--background)) 12%
+  );
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.vis-chart-card .chart-body {
+  padding: 24px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 16px;
+}
+.vis-chart-card .chart-body svg {
+  width: 100%;
+  height: auto;
+}
+.vis-chart-title {
+  font-size: 0.875rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted-foreground);
+  text-align: center;
+  margin: 0 0 4px;
+}
+
+.analyse-panel .chart-body {
+  padding: 12px 12px;
+  gap: 14px;
+}
+
+/* Chart controls inline in analyse panel */
+.analyse-panel .chart-controls {
+  padding: 10px 16px;
+}
+
+.vis-export-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--card);
+  font-size: 0.875rem;
+  color: var(--foreground);
+}
+
+.vis-export-toggle input {
+  accent-color: var(--primary);
+}
+
+.vis-export-note {
+  font-size: 0.8125rem;
+  color: var(--muted-foreground);
+}
+
+.vis-chart-footer {
+  border-top: 1px solid var(--border);
+  margin-top: 4px;
+  padding: 12px 20px;
+  background: color-mix(in srgb, var(--card) 92%, var(--muted) 8%);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.vis-cart-toggle--active {
+  border-color: color-mix(in srgb, var(--primary) 45%, var(--border));
+  background: color-mix(
+    in srgb,
+    color-mix(in srgb, var(--primary) 10%, var(--background)) 65%,
+    var(--card)
+  );
+  color: var(--primary);
+}
+.vis-added-flash {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--primary);
+  animation: vis-flash-in 0.2s ease-out;
+  opacity: 1;
+}
+@keyframes vis-flash-in {
+  from {
+    opacity: 0;
+    transform: translateX(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.vis-chart-card .chart-controls .ctrl-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 170px;
+}
+
+.vis-chart-card .chart-controls .ctrl-group label {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+
+.vis-chart-card .chart-controls .ctrl-group select {
+  width: 100%;
+  min-height: 34px;
+  border: 1.5px solid var(--border);
+  border-radius: 7px;
+  background-color: color-mix(
+    in srgb,
+    var(--card) 94%,
+    color-mix(in srgb, var(--primary) 10%, var(--background)) 6%
+  );
+  color: var(--foreground);
+  font-size: 0.9rem;
+  font-weight: 600;
+  padding: 5px 30px 5px 10px;
+  line-height: 1.2;
+}
+
+.vis-chart-card .chart-controls .ctrl-group select:hover {
+  border-color: color-mix(in srgb, var(--primary) 40%, var(--border));
+}
+
+.vis-chart-card .chart-controls .ctrl-group select:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 18%, transparent);
+}
+
+@media (max-width: 900px) {
+  .analyse-protection-notice {
+    top: 74px;
+    right: 10px;
+    left: 10px;
+    max-width: none;
+  }
+}

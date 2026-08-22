@@ -1,0 +1,55 @@
+﻿/* Normality gaussian charts */
+.normality-charts {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+  padding: 16px 0;
+  border-top: 1px solid var(--border);
+}
+.normality-chart-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 12px 10px 8px;
+  border: 1.5px solid
+    color-mix(in srgb, var(--norm-color, var(--primary)) 40%, var(--border));
+  border-radius: var(--radius-md);
+  background: color-mix(
+    in srgb,
+    var(--norm-color, var(--primary)) 4%,
+    var(--muted)
+  );
+  cursor: pointer;
+  transition:
+    box-shadow 0.15s,
+    transform 0.15s,
+    border-color 0.15s;
+}
+.normality-chart-card:hover {
+  box-shadow: 0 4px 16px
+    color-mix(in srgb, var(--norm-color, var(--primary)) 20%, transparent);
+  transform: translateY(-2px);
+  border-color: var(--norm-color, var(--primary));
+}
+.normality-chart-label {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--foreground);
+  text-align: center;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.normality-svg {
+  width: 100%;
+  height: auto;
+}
+.normality-verdict {
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+

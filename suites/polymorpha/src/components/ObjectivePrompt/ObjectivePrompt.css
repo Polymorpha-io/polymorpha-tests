@@ -1,0 +1,112 @@
+.objective-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1200;
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+.objective-dialog {
+  background-color: #ffffff !important;
+  background: #ffffff !important;
+  color: #111827 !important;
+  border: 1px solid #e5e7eb !important;
+  border-radius: 12px;
+  box-shadow:
+    0 20px 60px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(0, 0, 0, 0.08);
+  width: min(520px, calc(100vw - 32px));
+  max-width: 95vw;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-sizing: border-box;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  opacity: 1 !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  isolation: isolate;
+  position: relative;
+  z-index: 1;
+}
+
+[data-theme="dark"] .objective-dialog,
+.dark .objective-dialog,
+:root[data-theme="dark"] .objective-dialog,
+html[data-theme="dark"] .objective-dialog {
+  background: #18181b !important;
+  background-color: #18181b !important;
+  color: #f8fafc !important;
+  border-color: #2a2a33 !important;
+  box-shadow:
+    0 20px 60px rgba(0, 0, 0, 0.7),
+    0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+.objective-dialog * {
+  opacity: 1 !important;
+}
+
+.objective-header {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.objective-title {
+  font-size: 1.125rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.objective-subtitle {
+  font-size: 0.875rem;
+  color: hsl(var(--muted-foreground));
+  margin: 0;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.objective-input {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid hsl(var(--input));
+  border-radius: 8px;
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+  padding: 10px 12px;
+  font-size: 0.95rem;
+  line-height: 1.4;
+  resize: vertical;
+  min-height: 88px;
+}
+
+.objective-input:focus {
+  outline: none;
+  border-color: hsl(var(--primary));
+  box-shadow: 0 0 0 3px hsl(var(--primary) / 0.15);
+}
+
+.objective-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.objective-hint {
+  font-size: 0.75rem;
+  color: hsl(var(--muted-foreground));
+  margin: 0;
+  text-align: right;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}

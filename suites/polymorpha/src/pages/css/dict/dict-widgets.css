@@ -1,0 +1,81 @@
+﻿
+.dict-seo-widget-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 8px;
+}
+
+.dict-seo-widget {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--card) 90%, var(--muted) 10%);
+  padding: 10px;
+  display: grid;
+  gap: 2px;
+}
+
+.dict-seo-widget-label {
+  font-size: 0.8125rem;
+  color: var(--muted-foreground);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.dict-seo-widget-value {
+  color: var(--foreground);
+  font-size: 1.0625rem;
+  line-height: 1.25;
+}
+
+.dict-seo-widget--good {
+  border-color: color-mix(in srgb, #16a34a 40%, var(--border) 60%);
+}
+
+.dict-seo-widget--warn {
+  border-color: color-mix(in srgb, #d97706 45%, var(--border) 55%);
+}
+
+.dict-seo-mini-bars {
+  display: grid;
+  gap: 8px;
+}
+
+.dict-seo-mini-row {
+  display: grid;
+  grid-template-columns: minmax(120px, 0.8fr) 1fr auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.dict-seo-mini-label {
+  color: var(--muted-foreground);
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.dict-seo-mini-track {
+  position: relative;
+  width: 100%;
+  height: 10px;
+  border-radius: 9999px;
+  background: color-mix(in srgb, var(--muted) 70%, var(--card) 30%);
+  overflow: hidden;
+}
+
+.dict-seo-mini-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--primary) 85%, #ffffff 15%) 0%,
+    color-mix(in srgb, var(--primary) 55%, #0f172a 45%) 100%
+  );
+  border-radius: 9999px;
+}
+
+.dict-seo-mini-value {
+  color: var(--foreground);
+  font-size: 0.875rem;
+  font-weight: 700;
+}

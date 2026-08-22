@@ -1,0 +1,99 @@
+﻿/* Applied Steps Sidebar */
+.preview-applied-steps-sidebar {
+  border-left: 2px solid var(--border);
+  background: color-mix(in srgb, var(--card) 95%, var(--muted) 5%);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.applied-steps-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.applied-steps-header h2 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.applied-steps-list-container {
+  flex: 1;
+  overflow: auto;
+  padding: 12px;
+}
+
+.applied-steps-empty {
+  text-align: center;
+  padding: 32px 16px;
+  color: var(--muted-foreground);
+  font-size: 0.875rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.applied-steps-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.applied-step-item {
+  display: flex;
+  align-items: stretch;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.applied-step-drag-handle {
+  padding: 8px 6px;
+  display: flex;
+  align-items: center;
+  color: var(--muted-foreground);
+  cursor: grab;
+  background: var(--muted);
+  border-right: 1px solid var(--border);
+}
+.applied-step-drag-handle:active {
+  cursor: grabbing;
+}
+
+.applied-step-content {
+  flex: 1;
+  padding: 8px 12px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.applied-step-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.applied-step-type {
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.applied-step-actions {
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+}
+
+.applied-steps-footer {
+  padding: 16px;
+  border-top: 1px solid var(--border);
+  background: var(--card);
+}
+

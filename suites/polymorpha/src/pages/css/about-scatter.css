@@ -1,0 +1,44 @@
+﻿/* Scroll-driven scatter â€” single group transform */
+.about-blob-scatter-group {
+  transform: translateY(var(--blob-spread, 0px));
+  will-change: transform;
+}
+
+.about-page-panel {
+  width: min(1200px, 100%);
+  margin: 100vh auto 0;
+  background: color-mix(in srgb, var(--background) 40%, transparent);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: none;
+  border-radius: 24px 24px 0 0;
+  box-shadow: 0 -16px 48px -8px rgba(0, 0, 0, 0.08);
+  padding: 12px 22px 80px;
+  position: relative;
+  z-index: 1;
+}
+
+.about-page-head {
+  margin-bottom: 14px;
+  padding: 2px 0 10px;
+}
+
+.about-page-head .back-btn {
+  margin-bottom: 12px;
+}
+.about-page-head h2 {
+  margin: 0 0 4px;
+  font-size: clamp(2rem, 3vw, 3rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.08;
+}
+
+.about-page-head p {
+  margin: 0;
+  color: var(--muted-foreground);
+  line-height: 1.5;
+  max-width: 58ch;
+  font-size: 1.125rem;
+}
+

@@ -1,0 +1,201 @@
+﻿/* cell heat-map for descriptive stats */
+.cell-heat-hi {
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, #d97706 16%, var(--card)),
+    color-mix(in srgb, #d97706 8%, var(--card))
+  ) !important;
+  color: var(--foreground) !important;
+  font-weight: 700;
+}
+.cell-heat-lo {
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, #16a34a 14%, var(--card)),
+    color-mix(in srgb, #16a34a 6%, var(--card))
+  ) !important;
+  color: var(--foreground) !important;
+  font-weight: 700;
+}
+.cell-heat-neg {
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--destructive) 14%, var(--card)),
+    color-mix(in srgb, var(--destructive) 6%, var(--card))
+  ) !important;
+  color: var(--foreground) !important;
+}
+
+.corr-table tbody th {
+  padding: 9px 14px;
+  text-align: left;
+  font-weight: 600;
+  color: var(--foreground);
+  background: var(--muted);
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+  font-size: 1rem;
+  position: sticky;
+  left: 0;
+  z-index: 1;
+}
+.corr-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 0.625rem 1rem 0;
+}
+.corr-toolbar-label {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--muted-foreground);
+}
+.corr-palette-select {
+  min-width: 132px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background-color: var(--card);
+  color: var(--foreground);
+  font-size: 0.875rem;
+  font-weight: 600;
+  padding: 7px 28px 7px 10px;
+}
+.corr-palette-select:focus {
+  outline: none;
+  border-color: color-mix(in srgb, var(--primary) 65%, var(--border));
+  box-shadow: 0 0 0 2px
+    color-mix(
+      in srgb,
+      color-mix(in srgb, var(--primary) 10%, var(--background)) 60%,
+      transparent
+    );
+}
+.corr-table {
+  margin: 0 auto;
+}
+.analyse-section-card > .table-scroll:has(.corr-table) {
+  display: flex;
+  justify-content: center;
+  padding: 12px;
+}
+.freq-tabs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 0.5rem;
+  padding: 1rem;
+  align-items: stretch;
+}
+.freq-block,
+.freq-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--card);
+  padding: 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.freq-card-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: var(--muted);
+  border-bottom: 1px solid var(--border);
+}
+.freq-card-title {
+  font-size: 0.875rem;
+  font-weight: 700;
+  margin: 0;
+  color: var(--foreground);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.freq-card-badge {
+  font-size: 9px;
+  font-weight: 600;
+  background: var(--primary);
+  color: #fff;
+  padding: 2px 7px;
+  border-radius: 9999px;
+  white-space: nowrap;
+  margin-left: auto;
+}
+.freq-card-body {
+  padding: 8px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 340px;
+  overflow-y: auto;
+}
+.freq-row {
+  display: grid;
+  grid-template-columns: minmax(80px, 1.5fr) minmax(60px, 2fr) auto auto;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+  font-size: 0.875rem;
+}
+.freq-row-label {
+  color: var(--foreground);
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.freq-row-bar-track {
+  height: 6px;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--border) 60%, transparent);
+  overflow: hidden;
+}
+.freq-row-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  background: var(--primary);
+  transition: width 0.2s ease;
+}
+.freq-row-count {
+  font-variant-numeric: tabular-nums;
+  color: var(--foreground);
+  font-weight: 600;
+  font-size: 0.8125rem;
+  min-width: 32px;
+  text-align: right;
+}
+.freq-row-pct {
+  font-variant-numeric: tabular-nums;
+  color: var(--muted-foreground);
+  font-size: 0.8125rem;
+  min-width: 40px;
+  text-align: right;
+}
+.freq-card-toggle {
+  margin: 0;
+  padding: 8px 14px;
+  border-top: 1px solid var(--border);
+  text-align: center;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--primary);
+  border-radius: 0;
+}
+.freq-more {
+  font-size: 0.8125rem;
+  color: var(--muted-foreground);
+  margin: 4px 0 0;
+  font-style: italic;
+}
+.normal-yes {
+  color: #16a34a;
+  font-weight: 800;
+}
+.normal-no {
+  color: var(--foreground);
+  font-weight: 800;
+}
+

@@ -1,0 +1,655 @@
+/* Machine Learning Tab */
+
+/* ML Training UI */
+
+.ml-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.ml-row {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.ml-row:last-child {
+  border-bottom: none;
+}
+
+.ml-row--top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 14px;
+}
+
+.ml-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 140px;
+}
+
+.ml-field--narrow {
+  min-width: 70px;
+  max-width: 90px;
+}
+
+.ml-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted-foreground);
+}
+
+.ml-toggle-group {
+  display: inline-flex;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+.ml-toggle-btn {
+  padding: 6px 14px;
+  border: none;
+  background: var(--card);
+  color: var(--muted-foreground);
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+
+.ml-toggle-btn--active {
+  background: var(--primary);
+  color: #fff;
+}
+
+/* Custom select wrapper — hides native arrow, uses single chevron */
+.ml-custom-select {
+  position: relative;
+  display: inline-block;
+  width: 100%;
+}
+
+.ml-custom-select select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background: var(--card);
+  background-image: none;
+  color: var(--foreground);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 6px 28px 6px 10px;
+  font-size: 0.875rem;
+  cursor: pointer;
+  width: 100%;
+  text-overflow: ellipsis;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.ml-custom-select::after {
+  content: "\25BC";
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 9px;
+  color: var(--muted-foreground);
+  pointer-events: none;
+}
+
+.ml-custom-select--sm select {
+  padding: 5px 24px 5px 8px;
+  font-size: 0.8125rem;
+}
+
+.ml-input {
+  padding: 6px 10px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--foreground);
+  font-size: 0.875rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.ml-input--sm {
+  padding: 5px 8px;
+  font-size: 0.8125rem;
+  max-width: 90px;
+}
+
+.ml-input:focus,
+.ml-custom-select select:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 20%, transparent);
+}
+
+/* Hyperparams row */
+.ml-row--params {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ml-row-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted-foreground);
+}
+
+/* Section header in results cards */
+.ml-section-head {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--foreground);
+}
+
+.ml-params-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.ml-param {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 100px;
+}
+
+.ml-param-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--muted-foreground);
+  cursor: help;
+}
+
+/* Features */
+.ml-row--features {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ml-features-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.ml-features-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.ml-link-btn {
+  background: none;
+  border: none;
+  color: var(--primary);
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+}
+
+.ml-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.ml-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 9px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--foreground);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background 0.12s,
+    border-color 0.12s;
+}
+
+.ml-chip:hover {
+  border-color: var(--primary);
+}
+
+.ml-chip--on {
+  background: color-mix(in srgb, var(--primary) 10%, var(--background));
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.ml-chip--cat {
+  font-style: italic;
+}
+
+.ml-chip-badge {
+  font-size: 8px;
+  opacity: 0.55;
+  text-transform: uppercase;
+  font-weight: 800;
+}
+
+/* Action row */
+.ml-row--action {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.ml-train-btn {
+  padding: 9px 24px;
+  border-radius: var(--radius-md);
+  border: none;
+  background: var(--primary);
+  color: #fff;
+  font-size: 0.875rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.ml-train-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.ml-meta {
+  font-size: 11px;
+  color: var(--muted-foreground);
+}
+
+.ml-error {
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--destructive) 12%, transparent);
+  color: var(--destructive);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.ml-error-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 10px 16px 0;
+}
+
+.ml-retry-btn {
+  padding: 6px 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--destructive);
+  background: transparent;
+  color: var(--destructive);
+  font-size: 0.875rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+.ml-retry-btn:hover {
+  background: color-mix(in srgb, var(--destructive) 12%, transparent);
+}
+
+.ml-recommend {
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--primary);
+  cursor: pointer;
+  opacity: 0.75;
+  text-transform: none;
+  letter-spacing: 0;
+}
+.ml-recommend:hover {
+  opacity: 1;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* Loading indicator */
+.ml-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  min-width: min(280px, 100%);
+}
+
+.ml-loading-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.ml-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--border);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: ml-spin 0.7s linear infinite;
+}
+
+@keyframes ml-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.ml-loading-text {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.ml-loading-time {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--muted-foreground);
+  font-variant-numeric: tabular-nums;
+}
+
+.ml-progress {
+  width: 100%;
+  max-width: 360px;
+  height: 8px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--border) 55%, transparent);
+}
+
+.ml-progress-bar {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(
+    90deg,
+    var(--primary),
+    color-mix(in srgb, var(--primary) 65%, white)
+  );
+  transition: width 0.2s ease;
+}
+
+/* Warnings (amber) */
+.ml-warnings {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.ml-warning {
+  padding: 7px 12px;
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, #f59e0b 12%, transparent);
+  border-left: 3px solid #f59e0b;
+  color: #b45309;
+  font-size: 0.875rem;
+  line-height: 1.45;
+}
+
+/* Results */
+.ml-result-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 12px 16px 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.ml-result-title {
+  margin: 4px 0 0;
+  font-size: 1.125rem;
+  color: var(--foreground);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ml-result-task {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--primary) 10%, var(--background));
+  color: var(--primary);
+}
+
+.ml-badge {
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: color-mix(in srgb, #16a34a 15%, transparent);
+  color: #16a34a;
+  font-size: 0.875rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.ml-metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 8px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.ml-metric {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 10px;
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--muted) 60%, var(--card));
+  border: 1px solid var(--border);
+}
+
+.ml-metric-lbl {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted-foreground);
+}
+
+.ml-metric-val {
+  font-size: 1rem;
+  color: var(--foreground);
+}
+
+.ml-split-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  padding: 10px 16px;
+  font-size: 11px;
+  color: var(--muted-foreground);
+}
+
+.ml-split-more {
+  color: var(--muted-foreground);
+  opacity: 0.6;
+}
+
+/* Tables */
+.ml-table-wrap {
+  overflow-x: auto;
+  padding: 12px 16px 16px;
+}
+
+.ml-table-wrap--scroll {
+  max-height: 420px;
+  overflow-y: auto;
+}
+
+.ml-table-wrap--scroll thead {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.ml-cm-table,
+.ml-pred-table {
+  border-collapse: collapse;
+  font-size: 0.875rem;
+  width: 100%;
+}
+
+.ml-cm-table th,
+.ml-cm-table td,
+.ml-pred-table th,
+.ml-pred-table td {
+  padding: 7px 10px;
+  border: 1px solid var(--border);
+  text-align: center;
+  min-width: 36px;
+  white-space: nowrap;
+}
+
+.ml-cm-table th,
+.ml-pred-table th {
+  background: color-mix(in srgb, var(--muted) 80%, var(--card));
+  font-weight: 700;
+  font-size: 10px;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+  letter-spacing: 0.04em;
+}
+
+.ml-cm-table tbody th,
+.ml-pred-table tbody th {
+  font-size: 11px;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--foreground);
+  background: color-mix(in srgb, var(--muted) 50%, var(--card));
+}
+
+.ml-cm-diag {
+  font-weight: 700;
+}
+
+/* Confusion matrix compact report (>10 classes) */
+.ml-cm-report {
+  padding: 12px 16px 16px;
+}
+
+.ml-cm-summary {
+  font-size: 0.875rem;
+  margin: 0 0 12px;
+  color: var(--foreground);
+}
+
+.ml-cm-compact {
+  border-collapse: collapse;
+  font-size: 0.875rem;
+  width: 100%;
+}
+
+.ml-cm-compact th,
+.ml-cm-compact td {
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  text-align: left;
+}
+
+.ml-cm-compact th {
+  background: color-mix(in srgb, var(--muted) 80%, var(--card));
+  font-weight: 700;
+  font-size: 10px;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+
+.ml-cm-class-name {
+  font-weight: 600;
+  color: var(--foreground);
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ml-row-ok td:last-child {
+  color: #16a34a;
+  font-weight: 700;
+}
+.ml-row-err td:last-child {
+  color: var(--destructive);
+  font-weight: 600;
+}
+
+/* Feature importance */
+.ml-fi-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 20px 18px;
+}
+
+.ml-fi-row {
+  display: grid;
+  grid-template-columns: minmax(140px, 190px) minmax(0, 1fr) 64px;
+  align-items: center;
+  gap: 12px;
+}
+
+.ml-fi-name {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--foreground);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ml-fi-track {
+  height: 7px;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--border) 50%, transparent);
+  overflow: hidden;
+  min-width: 0;
+}
+
+.ml-fi-bar {
+  height: 100%;
+  border-radius: 4px;
+  background: var(--primary);
+  transition: width 0.3s ease;
+}
+
+.ml-fi-val {
+  font-size: 10px;
+  color: var(--muted-foreground);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  padding-right: 2px;
+}
