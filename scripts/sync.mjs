@@ -1,15 +1,16 @@
 #!/usr/bin/env node
 /**
- * sync.mjs — GitHub-only mirror for polymorpha-tests
+ * sync.mjs — GitHub-only mirror for polymorpha-tests (no local fallback)
  *
- * Fetches tests and harnesses from GitHub, never from C:\Users\... as primary (G15/G22).
- * Local fallback is ONLY for offline migration bootstrap and logs a warning.
+ * Fetches tests and harnesses from GitHub, never from C:\Users\... (G15/G15b/G22).
+ * GitHub-only: uses raw.githubusercontent.com + GitHub API; fails fast if GitHub unavailable (G19).
  * Sources:
- *  - Polymorpha-io/polymorpha#main        -> tests/, vite.config.ts, playwright.config.ts, src/test/setup.ts
- *  - Polymorpha-io/polymorpha-business-logic#main -> python/polymorpha/tests, python/pyproject.toml (reference)
+ *  - Polymorpha-io/polymorpha#main             -> tests/, vite.config.ts, playwright.config.ts, src/test/setup.ts, src, cloud-functions/tests
+ *  - Polymorpha-io/polymorpha-business-logic#main -> python/polymorpha/tests, python/pyproject.toml
+ *  - Polymorpha-io/polymorpha-stella#main      -> tests/unit, ts/src/knowledge, python/polymorpha_stella (G15b library)
  *
  * Usage: node scripts/sync.mjs       (fetch + overwrite suites/)
- *        node scripts/sync.mjs --check (fail if SHA stale vs last sync)
+ *        node scripts/sync.mjs --check (fail if SHA stale vs last sync — G21 hash truth)
  */
 
 import { execSync } from "node:child_process";
@@ -19,9 +20,7 @@ import {
   readFileSync,
   existsSync,
   readdirSync,
-  statSync,
   copyFileSync,
-  rmSync,
 } from "node:fs";
 import { dirname, join, resolve, relative } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -29,9 +28,7 @@ import { fileURLToPath } from "node:url";
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const SHA_FILE = join(ROOT, ".sync-sha.json");
 
-// GitHub-only upstreams (dest is relative to ROOT)
-// For polymorpha, dest = suites/polymorpha and filePath is preserved (tests/unit/foo.ts -> suites/polymorpha/tests/unit/foo.ts)
-// For business-logic, dest = suites/business-logic (filePath python/... -> suites/business-logic/python/...)
+// GitHub-only upstreams — no localFallback (user 2026-08-23: fuck the local fallback G15/G15b)
 const UPSTREAMS = [
   {
     repo: "Polymorpha-io/polymorpha",
@@ -49,7 +46,6 @@ const UPSTREAMS = [
       "playwright.config.ts",
       "package.json",
     ],
-    localFallback: "C:/Users/shawn/polymorpha",
   },
   {
     repo: "Polymorpha-io/polymorpha-business-logic",
@@ -59,7 +55,21 @@ const UPSTREAMS = [
       "python/pyproject.toml",
       "python/Makefile",
     ],
-    localFallback: "C:/Users/shawn/polymorpha/node_modules/@polymorpha/business-logic",
+  },
+  {
+    repo: "Polymorpha-io/polymorpha-stella",
+    dest: "suites/stella",
+    paths: [
+      "tests/unit",
+      "ts/src/knowledge",
+      "ts/src/embeddings",
+      "ts/src/lib/vector",
+      "ts/src/lib/representation",
+      "ts/src/lib/rag",
+      "ts/src/notebook",
+      "python/polymorpha_stella",
+      "python/pyproject.toml",
+    ],
   },
   {
     repo: "Polymorpha-io/polymorpha",
@@ -69,7 +79,6 @@ const UPSTREAMS = [
       "cloud-functions/tests/test_g18_cross_layer.py",
       "cloud-functions/stats/tests/test_legacy_contract.py",
     ],
-    localFallback: "C:/Users/shawn/polymorpha",
   },
 ];
 
@@ -87,61 +96,30 @@ function lsRemote(repo) {
 async function fetchRaw(repo, filePath) {
   const branch = "main";
   const url = `https://raw.githubusercontent.com/${repo}/${branch}/${filePath}`;
-  try {
-    const res = await fetch(url);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const buf = await res.arrayBuffer();
-    return Buffer.from(buf);
-  } catch (e) {
-    console.warn(`[sync] fetch failed ${url}: ${e.message} — trying local fallback if present`);
-    return null;
-  }
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`fetch ${url}: HTTP ${res.status}`);
+  const buf = await res.arrayBuffer();
+  return Buffer.from(buf);
 }
 
 async function listGithubFiles(repo, sha, prefix) {
-  // prefix is like "tests/unit" — list all files under that prefix via GitHub API
-  // Use git/trees recursive
   const apiUrl = `https://api.github.com/repos/${repo}/git/trees/${sha}?recursive=1`;
-  try {
-    const res = await fetch(apiUrl, {
-      headers: { Accept: "application/vnd.github.v3+json", "User-Agent": "polymorpha-tests-sync" },
-    });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
-    const files = (data.tree || [])
-      .filter((n) => n.type === "blob" && n.path.startsWith(prefix + "/"))
-      .map((n) => n.path);
-    // also handle exact file match (when prefix itself is a file)
-    const exact = (data.tree || []).find((n) => n.type === "blob" && n.path === prefix);
-    if (exact) files.unshift(exact.path);
-    return files;
-  } catch (e) {
-    console.warn(`[sync] list API failed ${repo} ${prefix}: ${e.message}`);
-    return null;
-  }
-}
-
-function listLocalFiles(localRoot, prefix) {
-  const full = join(localRoot, prefix);
-  if (!existsSync(full)) return [];
-  const st = statSync(full);
-  if (st.isFile()) return [prefix];
-  // directory: walk recursively
-  const out = [];
-  function walk(dir) {
-    const entries = readdirSync(dir);
-    for (const ent of entries) {
-      const p = join(dir, ent);
-      const s = statSync(p);
-      if (s.isDirectory()) walk(p);
-      else if (s.isFile()) {
-        const rel = relative(localRoot, p).replace(/\\/g, "/");
-        out.push(rel);
-      }
-    }
-  }
-  walk(full);
-  return out;
+  const res = await fetch(apiUrl, {
+    headers: {
+      Accept: "application/vnd.github.v3+json",
+      "User-Agent": "polymorpha-tests-sync",
+    },
+  });
+  if (!res.ok) throw new Error(`list ${repo} ${prefix}: HTTP ${res.status}`);
+  const data = await res.json();
+  const files = (data.tree || [])
+    .filter((n) => n.type === "blob" && n.path.startsWith(prefix + "/"))
+    .map((n) => n.path);
+  const exact = (data.tree || []).find(
+    (n) => n.type === "blob" && n.path === prefix,
+  );
+  if (exact) files.unshift(exact.path);
+  return files;
 }
 
 function ensureDirForFile(filePath) {
@@ -150,53 +128,49 @@ function ensureDirForFile(filePath) {
 
 async function syncUpstream(upstream, shas) {
   const sha = shas[upstream.repo];
-  console.log(`[sync] ${upstream.repo} -> ${upstream.dest} (sha ${sha?.slice(0, 7)})`);
+  console.log(
+    `[sync] ${upstream.repo} -> ${upstream.dest} (sha ${sha?.slice(0, 7)})`,
+  );
   for (const p of upstream.paths) {
-    const isFileHint = p.includes(".") && !p.endsWith("/"); // crude: has extension
-    // Try GitHub API listing first
+    const isFileHint = p.includes(".") && !p.endsWith("/");
     let files = null;
     if (sha && sha !== "unknown") {
-      files = await listGithubFiles(upstream.repo, sha, p);
+      try {
+        files = await listGithubFiles(upstream.repo, sha, p);
+      } catch (e) {
+        // GitHub-only — fail fast, no local fallback (G19)
+        throw new Error(
+          `[sync] list failed ${upstream.repo} ${p}: ${e.message} — GitHub-only, no local fallback`,
+        );
+      }
     }
     if (!files || files.length === 0) {
-      // Fallback to local enumeration + direct raw fetch per file, or pure local copy if raw fails
-      const localFiles = listLocalFiles(upstream.localFallback, p);
-      if (localFiles.length > 0) {
-        files = localFiles;
-        console.log(`[sync]   ${p}: using ${files.length} files from local vendor (GitHub list empty)`);
-      } else if (isFileHint) {
-        files = [p];
-      } else {
-        console.warn(`[sync]   skip ${p}: no files found via GitHub or local`);
+      if (isFileHint) files = [p];
+      else {
+        console.warn(`[sync]   skip ${p}: no files via GitHub API`);
         continue;
       }
     }
     for (const filePath of files) {
-      // GitHub primary
-      let content = await fetchRaw(upstream.repo, filePath);
-      const destPath = join(ROOT, upstream.dest, filePath);
-      // If fetch failed and local fallback exists, copy local
-      if (content === null) {
-        const localSrc = join(upstream.localFallback, filePath);
-        if (existsSync(localSrc)) {
-          ensureDirForFile(destPath);
-          copyFileSync(localSrc, destPath);
-          console.log(`[sync]   fallback copy ${filePath} -> ${relative(ROOT, destPath)}`);
-          continue;
-        } else {
-          console.warn(`[sync]   missing ${filePath} (no GitHub, no local)`);
-          continue;
-        }
+      let content;
+      try {
+        content = await fetchRaw(upstream.repo, filePath);
+      } catch (e) {
+        throw new Error(
+          `[sync] fetch failed ${upstream.repo} ${filePath}: ${e.message} — GitHub-only`,
+        );
       }
+      const destPath = join(ROOT, upstream.dest, filePath);
       ensureDirForFile(destPath);
       writeFileSync(destPath, content);
-      console.log(`[sync]   fetched ${filePath} -> ${relative(ROOT, destPath)} (${content.length} bytes)`);
+      console.log(
+        `[sync]   fetched ${filePath} -> ${relative(ROOT, destPath)} (${content.length} bytes)`,
+      );
     }
   }
 }
 
 async function syncFixtures() {
-  // Unified fixtures: copy suites/polymorpha/tests/mocks -> fixtures/
   const srcDir = join(ROOT, "suites/polymorpha/tests/mocks");
   const dstDir = join(ROOT, "fixtures");
   if (!existsSync(srcDir)) {
@@ -223,13 +197,17 @@ async function main() {
 
   if (check) {
     if (!existsSync(SHA_FILE)) {
-      console.error("[sync] --check: no .sync-sha.json, run without --check first");
+      console.error(
+        "[sync] --check: no .sync-sha.json, run without --check first",
+      );
       process.exit(1);
     }
     const prev = JSON.parse(readFileSync(SHA_FILE, "utf-8"));
     const stale = Object.keys(shas).filter((k) => shas[k] !== prev[k]);
     if (stale.length) {
-      console.error(`[sync] stale upstreams: ${stale.join(", ")} — run npm run sync`);
+      console.error(
+        `[sync] stale upstreams: ${stale.join(", ")} — run npm run sync`,
+      );
       console.error(`[sync] prev:`, prev);
       console.error(`[sync] curr:`, shas);
       process.exit(1);
@@ -238,29 +216,25 @@ async function main() {
     return;
   }
 
-  // Ensure dest dirs
   for (const u of UPSTREAMS) mkdirSync(join(ROOT, u.dest), { recursive: true });
   mkdirSync(join(ROOT, "fixtures"), { recursive: true });
   mkdirSync(join(ROOT, ".github/workflows"), { recursive: true });
 
-  // De-duplicate upstream repos: group by repo+dest+paths unique
   const seen = new Set();
   for (const u of UPSTREAMS) {
     const key = `${u.repo}:${u.dest}:${u.paths.join(",")}`;
     if (seen.has(key)) continue;
     seen.add(key);
-    // eslint-disable-next-line no-await-in-loop
     await syncUpstream(u, shas);
   }
 
   await syncFixtures();
 
-  // Also ensure suites/polymorpha/src/test/setup.ts is present for vitest
-  // Already handled via UPSTREAMS, but ensure parent exists
-
   writeFileSync(SHA_FILE, JSON.stringify(shas, null, 2) + "\n");
   console.log(`[sync] wrote ${SHA_FILE}`);
-  console.log("[sync] done — suites/ now mirrors GitHub (with local fallback where needed)");
+  console.log(
+    "[sync] done — suites/ now mirrors GitHub (GitHub-only, no local fallback)",
+  );
 }
 
 main().catch((e) => {
