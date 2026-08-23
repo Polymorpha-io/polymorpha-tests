@@ -28,6 +28,7 @@
     "@fontsource-variable/inter": "^5.2.8",
     "@monaco-editor/react": "^4.7.0",
     "@polymorpha/business-logic": "git+https://github.com/Polymorpha-io/polymorpha-business-logic.git#main",
+    "@polymorpha/stella": "git+https://github.com/Polymorpha-io/polymorpha-stella.git#main",
     "@polymorpha/tests": "git+https://github.com/Polymorpha-io/polymorpha-tests.git#main",
     "@radix-ui/react-dialog": "^1.1.19",
     "@tailwindcss/vite": "^4.3.2",

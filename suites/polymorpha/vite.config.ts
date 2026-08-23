@@ -113,10 +113,7 @@ export default defineConfig({
   },
   build: {
     sourcemap: false,
-    // Heavy vendor chunks are intentional: charts ~9MB (Plotly) + monaco ~3.8MB + pdf ~1.3MB are
-    // isolated via manualChunks. Raise limit above them so build is warning-free while still
-    // catching accidental growth in the main index chunk (~1.9MB).
-    chunkSizeWarningLimit: 10000,
+    chunkSizeWarningLimit: 500,
     rollupOptions: {
       output: {
         manualChunks(id) {

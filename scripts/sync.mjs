@@ -93,10 +93,24 @@ function lsRemote(repo) {
   }
 }
 
+function githubHeaders() {
+  const h = {
+    Accept: "application/vnd.github.v3+json",
+    "User-Agent": "polymorpha-tests-sync",
+  };
+  const token =
+    process.env.GITHUB_TOKEN ||
+    process.env.GH_TOKEN ||
+    process.env.GH_PAT ||
+    "";
+  if (token) h.Authorization = `token ${token}`;
+  return h;
+}
+
 async function fetchRaw(repo, filePath) {
   const branch = "main";
   const url = `https://raw.githubusercontent.com/${repo}/${branch}/${filePath}`;
-  const res = await fetch(url);
+  const res = await fetch(url, { headers: githubHeaders() });
   if (!res.ok) throw new Error(`fetch ${url}: HTTP ${res.status}`);
   const buf = await res.arrayBuffer();
   return Buffer.from(buf);
@@ -105,10 +119,7 @@ async function fetchRaw(repo, filePath) {
 async function listGithubFiles(repo, sha, prefix) {
   const apiUrl = `https://api.github.com/repos/${repo}/git/trees/${sha}?recursive=1`;
   const res = await fetch(apiUrl, {
-    headers: {
-      Accept: "application/vnd.github.v3+json",
-      "User-Agent": "polymorpha-tests-sync",
-    },
+    headers: githubHeaders(),
   });
   if (!res.ok) throw new Error(`list ${repo} ${prefix}: HTTP ${res.status}`);
   const data = await res.json();
@@ -156,6 +167,10 @@ async function syncUpstream(upstream, shas) {
       try {
         content = await fetchRaw(upstream.repo, filePath);
       } catch (e) {
+        if (String(e.message).includes("404")) {
+          console.warn(`[sync]   skip missing ${upstream.repo} ${filePath}: ${e.message}`);
+          continue;
+        }
         throw new Error(
           `[sync] fetch failed ${upstream.repo} ${filePath}: ${e.message} — GitHub-only`,
         );
