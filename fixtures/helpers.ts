@@ -16,6 +16,7 @@ import anovaCsv from "./anova.csv?raw";
 import correlationCsv from "./correlation.csv?raw";
 import skewedCsv from "./skewed.csv?raw";
 import duplicatesCsv from "./duplicates.csv?raw";
+import dirty10kCsv from "./dirty_10k.csv?raw";
 
 import type { Dataset, ColumnType } from "@/types";
 
@@ -109,4 +110,5 @@ export const fixtures = {
   correlation: buildDataset(correlationCsv, "correlation.csv"),
   skewed: buildDataset(skewedCsv, "skewed.csv"),
   duplicates: buildDataset(duplicatesCsv, "duplicates.csv"),
+  dirty_10k: buildDataset(dirty10kCsv, "dirty_10k.csv"),
 } as const;

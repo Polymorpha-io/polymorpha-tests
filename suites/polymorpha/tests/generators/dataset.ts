@@ -313,4 +313,66 @@ export const presets = {
         { name: "b", type: "numeric" },
       ],
     }),
+
+  /**
+   * Dirty 10k — deterministic 10 000-row fixture covering all dirt types.
+   * Mirrors fixtures/dirty_10k.csv (checked-in 1.2 MB CSV) so unit tests can
+   * reuse the same shape without file IO. Deterministic via seed "dirty_10k".
+   *
+   * Columns: id, age, salary, revenue, treatment, region, status,
+   * signup_date, last_login, is_active, email, tags, category_code, notes, dup_key
+   * Dirt: 6% missing ("" / N/A / - / null), 0.5% typos, 8% wrong dates (MM/DD/YYYY,
+   * YYYY.MM.DD, invalid 2023-13-01), 1.2% outliers (age 250-500, salary 0.9M+),
+   * 1% comma-strings ("45,000"), 5% inconsistent case/whitespace, high-cardinality
+   * email (8k unique), mixed booleans (Yes/No/1/0/TRUE), unicode/html in notes,
+   * 500 duplicate dup_key groups + 250 exact-row dups, comma-tags for explode.
+   */
+  dirty10k: () =>
+    makeDataset({
+      fileName: "dirty_10k.csv",
+      rows: 10_000,
+      seed: "dirty_10k",
+      missingPct: 0.06,
+      outlierPct: 0.012,
+      cols: [
+        { name: "id", type: "numeric" },
+        { name: "age", type: "numeric" },
+        { name: "salary", type: "numeric" },
+        { name: "revenue", type: "numeric", dist: "skewed" as const },
+        { name: "treatment", type: "categorical", cardinality: 3 },
+        { name: "region", type: "categorical", cardinality: 5 },
+        { name: "status", type: "categorical", cardinality: 3 },
+        { name: "signup_date", type: "date" },
+        { name: "last_login", type: "date" },
+        { name: "is_active", type: "boolean" },
+        { name: "email", type: "categorical", cardinality: 8 },
+        { name: "tags", type: "categorical", cardinality: 4 },
+        { name: "category_code", type: "categorical", cardinality: 10 },
+        { name: "notes", type: "categorical", cardinality: 6 },
+        { name: "dup_key", type: "categorical", cardinality: 8 },
+      ],
+      extraRows: (() => {
+        const dirty: Row[] = [];
+        for (let i = 0; i < 50; i++) {
+          dirty.push({
+            id: 10001 + i,
+            age: i % 3 === 0 ? "" : i % 3 === 1 ? "twenty" : 350,
+            salary: i % 3 === 0 ? "45,000" : i % 3 === 1 ? null : 1_150_000,
+            revenue: i % 2 === 0 ? null : Math.round(Math.random() * 5000 * 20 + 40000),
+            treatment: i % 2 === 0 ? " control " : "CONTROL",
+            region: i % 2 === 0 ? " seoul " : "SEOUL",
+            status: i % 2 === 0 ? "Apprved" : "approved",
+            signup_date: i % 3 === 0 ? "12/31/2023" : i % 3 === 1 ? "2023-13-01" : "2023.MM.DD",
+            last_login: i % 2 === 0 ? "N/A" : "2023-00-10T00:00:00Z",
+            is_active: i % 4 === 0 ? "Yes" : i % 4 === 1 ? "1" : i % 4 === 2 ? "TRUE" : "No",
+            email: `user${i}@example.com`,
+            tags: i % 3 === 0 ? "a,b" : i % 3 === 1 ? "x|y" : "single",
+            category_code: i % 2 === 0 ? " cat_01 " : "CAT_01",
+            notes: i % 3 === 0 ? "Jürgen" : i % 3 === 1 ? "<b>bold</b>" : "😀",
+            dup_key: `key_${String(1).padStart(4, "0")}`,
+          });
+        }
+        return dirty;
+      })(),
+    }),
 } as const;
