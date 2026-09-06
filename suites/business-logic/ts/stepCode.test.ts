@@ -263,16 +263,22 @@ describe("pythonToStep rejections (fail inline, config untouched)", () => {
 });
 
 describe("capability map + chain export", () => {
-  it("editable families vs view-only fallback", () => {
+  it("editable families vs view-only renderers", () => {
     for (const t of ["query", "sort", "group", "merge", "getDummies"]) {
       expect(isCellEditable(t)).toBe(true);
     }
-    for (const t of ["fuzzyMatch", "balance", "pivot", "note"]) {
+    // View-only families render REAL code (not the fallback) since
+    // [POLY-CELLS] full coverage — editable stays false, no note.
+    for (const t of ["fuzzyMatch", "balance", "pivot", "explode", "note"]) {
       expect(isCellEditable(t)).toBe(false);
     }
     const fb = stepToPython({ type: "fuzzyMatch", column: "name" });
     expect(fb.editable).toBe(false);
-    expect(fb.note ?? "").toMatch(/fuzzyMatch/);
+    expect(fb.code).toContain("rapidfuzz");
+    expect(fb.code).not.toContain("auto-generated preview");
+    const bal = stepToPython({ type: "balance", target: "y" });
+    expect(bal.editable).toBe(false);
+    expect(bal.code).toContain("imblearn");
     expect(pythonToStep("whatever", { type: "fuzzyMatch" }).ok).toBe(false);
   });
 
