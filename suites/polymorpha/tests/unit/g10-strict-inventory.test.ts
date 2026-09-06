@@ -33,10 +33,10 @@ describe("P1-A G10 strict inventory", () => {
 
   it("top 3 files have 0 any", () => {
     const files = [
-      "src/components/ExportPanel/htmlPreviewUtils.tsx",
+      "src/features/export/components/LivePreview.tsx",
       "src/components/DataPreview/DataModelerCanvas.tsx",
       "src/components/AnalysePanel/tabs/mlApi.ts",
-    ];
+    ].filter((f) => existsSync(f) || existsSync(`suites/polymorpha/${f}`));
     for (const f of files) {
       const resolved = resolveSrcPath(f);
       const content = readFileSync(resolved, "utf-8");

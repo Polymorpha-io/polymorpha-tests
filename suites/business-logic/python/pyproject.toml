@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "polymorpha-stats"
-version = "0.4.1"
-description = "Polymorpha statistical analysis and ML library — inferential stats only (parametric / non-parametric / correlation / regression)"
+version = "0.4.2"
+description = "Polymorpha statistical analysis and ML library — inferential stats + wrangle/text/date/reshape/feature (Pandas/Polars/Dataiku surface)"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
@@ -15,10 +15,17 @@ dependencies = [
     "scikit-learn>=1.2.0",
     "statsmodels>=0.14.0",
     "pydantic>=2.0.0",
-    "mlxtend>=0.22.0",
+    "pyarrow>=14.0",
 ]
 
 [project.optional-dependencies]
+extended = [
+    "rapidfuzz>=3.0.0",
+    "holidays>=0.35",
+    "imbalanced-learn>=0.11",
+    "pytz>=2023.3",
+    "mlxtend>=0.22.0",
+]
 dev = [
     "pytest>=7.0.0",
     "pytest-cov>=4.0.0",

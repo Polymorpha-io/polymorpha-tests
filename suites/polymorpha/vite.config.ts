@@ -82,6 +82,14 @@ export default defineConfig({
         target: "http://127.0.0.1:8080",
         changeOrigin: true,
       },
+      "/api/recommend": {
+        target: "http://127.0.0.1:8787",
+        changeOrigin: true,
+      },
+      "/api/stella/chat": {
+        target: "http://127.0.0.1:8787",
+        changeOrigin: true,
+      },
     },
   },
   define: {
@@ -156,5 +164,15 @@ export default defineConfig({
     include: ["tests/unit/**/*.test.{ts,tsx}", "tests/api/**/*.test.{ts,tsx}"],
     exclude: ["tests/e2e/**", "node_modules/**"],
     reporters: ["default"],
+    deps: {
+      // @ts-ignore — vitest types for deps.inline are outdated in this version
+      inline: [/@polymorpha\/business-logic/, /@polymorpha\/stella/],
+    },
+    server: {
+      deps: {
+        // @ts-ignore — vitest types
+        inline: [/@polymorpha\/business-logic/, /@polymorpha\/stella/],
+      },
+    },
   },
 });
