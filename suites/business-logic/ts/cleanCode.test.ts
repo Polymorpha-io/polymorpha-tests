@@ -1,5 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { cleanCodeFor, cleanCodeAreas } from "@polymorpha/business-logic";
+import {
+  cleanCodeFor,
+  cleanCodeAreas,
+  cleaningConfigToPython,
+} from "@polymorpha/business-logic";
 
 /**
  * [POLY-CELLS] Golden tests for the cleaning reference map.
@@ -76,6 +80,49 @@ describe("cleanCodeFor", () => {
     );
     expect(cleanCodeFor("bogus-area", {}).code).toContain(
       "no standalone snippet for 'bogus-area'",
+    );
+  });
+});
+
+describe("cleaningConfigToPython", () => {
+  it("composes active sections, skips defaults", () => {
+    const code = cleaningConfigToPython({
+      missing: {
+        age: { strategy: "median" },
+        name: { strategy: "none" },
+      },
+      outliers: {
+        price: { method: "iqr", action: "remove" },
+      },
+      duplicates: { enabled: true, subsetColumns: [] },
+      removeColumns: ["tmp"],
+      scaling: { age: { method: "zscore" } },
+      encodings: { city: { type: "onehot" } },
+      rowFilter: { enabled: true, column: "age", operator: "gte", value: "18" },
+      mathTransforms: [{ column: "price", transform: "log" }],
+      binRules: [],
+      dateExtraction: [],
+      derivedColumns: [],
+      stringReplace: [],
+      categoryMappings: [],
+      lagLeadRules: [],
+      interactionTerms: [],
+    });
+    expect(code).toContain("import pandas as pd");
+    expect(code).toContain(".fillna(");
+    expect(code).toContain("q1, q3");
+    expect(code).toContain("drop_duplicates(");
+    expect(code).toContain("drop(columns=");
+    expect(code).toContain(".mean()");
+    expect(code).toContain("get_dummies");
+    expect(code).toContain(">= 18");
+    expect(code).toContain("np.log(");
+    expect(code).not.toContain('"name"');
+  });
+
+  it("empty config yields an honest comment", () => {
+    expect(cleaningConfigToPython({}).split("\n")[0]).toMatch(
+      /no cleaning steps/,
     );
   });
 });
