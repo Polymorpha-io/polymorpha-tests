@@ -5,6 +5,9 @@
  * Usage:
  *   import { fixtures } from "@mocks/helpers";
  *   const { raw } = fixtures.missing; // or just `fixtures.missing`
+ *
+ * NOTE: keep the `fixtures` map in parity with
+ * `suites/polymorpha/tests/mocks/helpers.ts` (same names).
  */
 
 import minimalCsv from "./minimal.csv?raw";

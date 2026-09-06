@@ -26,7 +26,7 @@
     "test:api": "vitest run --config vite.api.config.ts --reporter=verbose",
     "test:e2e": "playwright test",
     "test:python": "python -m pytest suites/business-logic/python -v --tb=short",
-    "test:stella": "python -m pytest suites/stella/python -v --tb=short && npx vitest run suites/stella/unit --reporter=verbose",
+    "test:stella": "python -m pytest suites/stella/python -v --tb=short && npx vitest run suites/stella/tests/unit --reporter=verbose",
     "test:watch": "vitest",
     "lint": "eslint .",
     "format": "prettier --write \"suites/**/*.{ts,tsx,py}\" \"scripts/**/*.{js,mjs}\"",

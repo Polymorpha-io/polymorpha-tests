@@ -5,6 +5,10 @@
  * Usage:
  *   import { fixtures } from "@mocks/helpers";
  *   const { raw } = fixtures.missing; // or just `fixtures.missing`
+ *
+ * NOTE: keep the `fixtures` map in parity with root `fixtures/helpers.ts`
+ * (same names; CSVs synced mocks/ -> fixtures/ by `node scripts/sync.mjs`
+ * `syncFixtures`). The root copy additionally serves the root vite runner.
  */
 
 import minimalCsv from "./minimal.csv?raw";
@@ -16,6 +20,7 @@ import anovaCsv from "./anova.csv?raw";
 import correlationCsv from "./correlation.csv?raw";
 import skewedCsv from "./skewed.csv?raw";
 import duplicatesCsv from "./duplicates.csv?raw";
+import dirty10kCsv from "./dirty_10k.csv?raw";
 
 import type { Dataset, ColumnType } from "@/types";
 
@@ -109,4 +114,5 @@ export const fixtures = {
   correlation: buildDataset(correlationCsv, "correlation.csv"),
   skewed: buildDataset(skewedCsv, "skewed.csv"),
   duplicates: buildDataset(duplicatesCsv, "duplicates.csv"),
+  dirty_10k: buildDataset(dirty10kCsv, "dirty_10k.csv"),
 } as const;

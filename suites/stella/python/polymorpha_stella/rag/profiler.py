@@ -25,25 +25,6 @@ else:
     _IMPORT_ERROR = None
 
 
-def _chunk_text_simple(text: str, chunk_tokens: int = 512) -> List[str]:
-    if not text:
-        return []
-    approx_chars = chunk_tokens * 4
-    if len(text) <= approx_chars:
-        return [text]
-    out: List[str] = []
-    start = 0
-    while start < len(text):
-        end = min(start + approx_chars, len(text))
-        if end < len(text):
-            last_nl = text.rfind("\n", start, end)
-            if last_nl > start + approx_chars * 0.5:
-                end = last_nl + 1
-        out.append(text[start:end].strip())
-        start = end
-    return [c for c in out if c]
-
-
 class StellaRagProfiler:
     """Thin wrapper — business-logic RagProfiler -> KnowledgeRecord dicts."""
 
@@ -108,7 +89,7 @@ class StellaRagProfiler:
                 {
                     "id": f"dataset:{dataset_id}:col:{cname}",
                     "workspaceId": workspace_id,
-                    "notebookId": f"nb:{workspaceId}",
+                    "notebookId": f"nb:{workspace_id}",
                     "datasetId": dataset_id,
                     "kind": "column_semantic",
                     "text": text,
@@ -129,7 +110,7 @@ class StellaRagProfiler:
                 {
                     "id": f"rel:{dataset_id}:missingTogether:{a}:{b}",
                     "workspaceId": workspace_id,
-                    "notebookId": f"nb:{workspaceId}",
+                    "notebookId": f"nb:{workspace_id}",
                     "datasetId": dataset_id,
                     "kind": "relationship",
                     "text": text,
