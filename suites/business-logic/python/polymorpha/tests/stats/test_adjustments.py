@@ -21,5 +21,6 @@ class TestCorrections:
         assert Stats.Corrections.fdr_bh([]) == []
 
     def test_fdr_bh_no_significant(self) -> None:
+        # Library truth (statsmodels fdr_bh): adjusted p-values, not identity.
         corrected = Stats.Corrections.fdr_bh([0.5, 0.6, 0.7], alpha=0.05)
-        assert all(c == p for c, p in zip(corrected, [0.5, 0.6, 0.7]))
+        assert corrected == pytest.approx([0.7, 0.7, 0.7])
