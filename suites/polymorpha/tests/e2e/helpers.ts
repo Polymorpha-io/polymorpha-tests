@@ -1,5 +1,6 @@
 import { expect, type Page } from "@playwright/test";
 import { csvPath } from "@mocks/paths";
+import { E2E_TIMEOUTS, TEST_IDS } from "@shared/constants";
 
 /**
  * Dismiss the first-visit disclaimer modal ("Before you begin"). It mounts
@@ -11,10 +12,10 @@ export async function dismissDisclaimer(page: Page): Promise<void> {
     name: /I understand, continue/i,
   });
   try {
-    await accept.waitFor({ state: "visible", timeout: 10_000 });
+    await accept.waitFor({ state: "visible", timeout: E2E_TIMEOUTS.ui });
     await accept.click();
     await expect(accept)
-      .toHaveCount(0, { timeout: 10_000 })
+      .toHaveCount(0, { timeout: E2E_TIMEOUTS.ui })
       .catch(() => {});
   } catch {
     // Never shown (already accepted / storage restored) — fine.
@@ -27,15 +28,15 @@ export async function dismissDisclaimer(page: Page): Promise<void> {
  * The account is created once via the app signup; credentials are test-only.
  */
 export async function signInWithTestAccount(page: Page): Promise<void> {
-  const email = process.env.E2E_EMAIL ?? "polymorpha.e2e@example.com";
-  const password = process.env.E2E_PASSWORD ?? "E2ePass!2026";
+  const email = process.env.E2E_EMAIL ?? TEST_IDS.e2eEmail;
+  const password = process.env.E2E_PASSWORD ?? TEST_IDS.e2ePassword;
 
   await page.goto("/login");
   await dismissDisclaimer(page);
   await page.locator("#login-email").fill(email);
   await page.locator("#login-password").fill(password);
   await page.getByRole("button", { name: "Log in", exact: true }).click();
-  await page.waitForURL(/workspaces/, { timeout: 30_000 });
+  await page.waitForURL(/workspaces/, { timeout: E2E_TIMEOUTS.auth });
 }
 
 /** Load the home page and dismiss the first-visit disclaimer if shown. */
@@ -63,7 +64,7 @@ export async function uploadCsv(page: Page, name: string): Promise<void> {
   const modeller = page.getByRole("heading", {
     name: `${name}.csv · Data Modeller`,
   });
-  await expect(modeller).toBeVisible({ timeout: 60_000 });
+  await expect(modeller).toBeVisible({ timeout: E2E_TIMEOUTS.upload });
 }
 
 /** Click the workflow toolbar's primary action by its aria-label. */
@@ -77,7 +78,7 @@ export async function continueTo(page: Page, label: RegExp): Promise<void> {
  */
 export async function dismissStatsLevelPrompt(page: Page): Promise<void> {
   const skip = page.getByRole("button", { name: /Skip for now/i });
-  await expect(skip).toBeVisible({ timeout: 10_000 });
+  await expect(skip).toBeVisible({ timeout: E2E_TIMEOUTS.ui });
   await skip.click();
 }
 

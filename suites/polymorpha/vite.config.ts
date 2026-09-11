@@ -16,6 +16,7 @@ export default defineConfig({
     alias: {
       "@": path.resolve(__dirname, "src"),
       "@mocks": path.resolve(__dirname, "tests/mocks"),
+      "@shared": path.resolve(__dirname, "../_shared"),
     },
   },
   server: {

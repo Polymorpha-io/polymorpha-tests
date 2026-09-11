@@ -358,7 +358,8 @@ export const presets = {
             id: 10001 + i,
             age: i % 3 === 0 ? "" : i % 3 === 1 ? "twenty" : 350,
             salary: i % 3 === 0 ? "45,000" : i % 3 === 1 ? null : 1_150_000,
-            revenue: i % 2 === 0 ? null : Math.round(Math.random() * 5000 * 20 + 40000),
+            revenue:
+              i % 2 === 0 ? null : 40000 + ((i * 7919) % 100000),
             treatment: i % 2 === 0 ? " control " : "CONTROL",
             region: i % 2 === 0 ? " seoul " : "SEOUL",
             status: i % 2 === 0 ? "Apprved" : "approved",

@@ -4,6 +4,11 @@
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
+// Deterministic mock-upload ids (no bare Math.random — uniqueness via counter).
+let mockUploadSeq = 0;
+const nextUploadId = () =>
+  `upload-${(mockUploadSeq++).toString(36).padStart(6, "0")}`;
+
 // In-memory user store for quota simulation
 type UserData = {
   totalStorageBytes: number;
@@ -44,7 +49,7 @@ vi.mock("firebase/firestore", async () => {
         const col = args[0] as { _uid?: string };
         const ref: Record<string, unknown> = {
           _uid: col._uid ?? "test-uid",
-          id: `upload-${Math.random().toString(36).slice(2, 8)}`,
+          id: nextUploadId(),
           _isDoc: true,
         };
         (ref as Record<string, unknown>).withConverter = () => ref;
@@ -134,7 +139,7 @@ vi.mock("firebase/firestore", async () => {
     }),
     getDocs: vi.fn(async () => ({ size: 0, docs: [], empty: true })),
     addDoc: vi.fn(async () => ({
-      id: `upload-${Math.random().toString(36).slice(2, 8)}`,
+      id: nextUploadId(),
     })),
     updateDoc: vi.fn(async (ref: unknown, updates: Record<string, unknown>) => {
       const uid =

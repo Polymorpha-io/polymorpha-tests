@@ -5,6 +5,10 @@
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
+// Deterministic mock-doc ids (no bare Math.random — uniqueness via counter).
+let mockDocSeq = 0;
+const nextDocId = () => `doc-${(mockDocSeq++).toString(36).padStart(6, "0")}`;
+
 // Shared in-memory stores
 type UserData = {
   totalStorageBytes: number;
@@ -57,7 +61,7 @@ vi.mock("firebase/firestore", async () => {
         const col = args[0] as { _uid?: string };
         const ref: Record<string, unknown> = {
           _uid: col._uid ?? "test-uid",
-          id: `doc-${Math.random().toString(36).slice(2, 8)}`,
+          id: nextDocId(),
           _isDoc: true,
         };
         (ref as Record<string, unknown>).withConverter = () => ref;
@@ -173,7 +177,7 @@ vi.mock("firebase/firestore", async () => {
       return { size: docs.length, docs, empty: docs.length === 0 };
     }),
     addDoc: vi.fn(async () => ({
-      id: `doc-${Math.random().toString(36).slice(2, 8)}`,
+      id: nextDocId(),
     })),
     updateDoc: vi.fn(async (ref: unknown, updates: Record<string, unknown>) => {
       const uid =
