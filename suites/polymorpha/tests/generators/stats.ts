@@ -106,6 +106,7 @@ export function paramsForAction(
     case "ttest":
       return { col1: a, col2: b, type: "independent" };
     case "anova":
+    case "holistic":
     case "welchAnova":
     case "levene":
       return { response: a, group: g };
@@ -203,6 +204,20 @@ export function resultForAction(
         meanDiff: 3,
       };
     case "anova":
+      return {
+        factor: "group",
+        responseVar: a,
+        F: 4.2,
+        dfBetween: 2,
+        dfWithin: 27,
+        pValue: 0.02,
+        etaSquared: 0.2,
+        significant: true,
+        tukey: [],
+      };
+    case "holistic":
+      // Omnibus holistic check reuses the one-way ANOVA engine (same as the
+      // UI's testsRunner holistic task): F + share-of-variance story.
       return {
         factor: "group",
         responseVar: a,

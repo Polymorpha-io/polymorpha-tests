@@ -44,8 +44,8 @@ describe("stats action contract — every catalog test is wired", () => {
 });
 
 describe("stats action contract — cross-check sanity", () => {
-  it("catalog exposes exactly 27 tests", () => {
-    expect(ALL_TEST_KEYS).toHaveLength(27);
+  it("catalog exposes exactly 52 tests", () => {
+    expect(ALL_TEST_KEYS).toHaveLength(52);
   });
 
   it("every KNOWN_MISSING_BUILDER key actually has no builder export", () => {

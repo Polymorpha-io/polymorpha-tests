@@ -11,7 +11,14 @@ import { paramsForAction, resultForAction } from "./stats";
 
 /** PascalCase builder export name for a TestKey, e.g. kendallTau → buildKendallTau. */
 export function builderNameFor(key: TestKey): string {
-  return `build${key.charAt(0).toUpperCase()}${key.slice(1)}`;
+  // Drift names: a few older exports use acronym/camel casing that the
+  // mechanical rule does not produce (same idea as statsActionFor below).
+  const aliases: Partial<Record<TestKey, string>> = {
+    boxcox: "buildBoxCox",
+    yeojohnson: "buildYeoJohnson",
+    dunnTest: "buildDunn",
+  };
+  return aliases[key] ?? `build${key.charAt(0).toUpperCase()}${key.slice(1)}`;
 }
 
 /**
@@ -19,19 +26,13 @@ export function builderNameFor(key: TestKey): string {
  * `payloadBuilders` yet — they run via the generic parity loop in testsRunner.
  * If a builder is added upstream, the contract test FAILS until this list is
  * updated (fail loud instead of silently drifting).
+ *
+ * Currently empty: B1/B2/B3 added the last ten (wilcoxon, mcnemar,
+ * gofChisquare, repeatedAnova, partialCorrelation, pointBiserial,
+ * ridgeRegression, lassoRegression, moderation, mediation) and buildHolistic
+ * covers holistic — every catalog key has a builder.
  */
-export const KNOWN_MISSING_BUILDERS: readonly TestKey[] = [
-  "wilcoxon",
-  "mcnemar",
-  "gofChisquare",
-  "repeatedAnova",
-  "partialCorrelation",
-  "pointBiserial",
-  "ridgeRegression",
-  "lassoRegression",
-  "moderation",
-  "mediation",
-];
+export const KNOWN_MISSING_BUILDERS: readonly TestKey[] = [];
 
 /** Canonical STATS_ACTIONS action for a TestKey (drift names resolved). */
 export function statsActionFor(key: TestKey): string {
