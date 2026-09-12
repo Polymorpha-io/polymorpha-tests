@@ -7,8 +7,7 @@
     "types": ["vite/client"],
     "paths": {
       "@/*": ["../src/*"],
-      "@mocks/*": ["./mocks/*"],
-      "@shared/*": ["../../_shared/*"]
+      "@mocks/*": ["./mocks/*"]
     }
   },
   "include": [".", "../src"]

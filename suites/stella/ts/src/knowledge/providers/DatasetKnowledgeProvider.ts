@@ -1,11 +1,20 @@
 import type { KnowledgeRecord } from "../types";
 import type { KnowledgeProvider } from "../KnowledgeService";
-import { hashString } from "@polymorpha/business-logic";
+import { sourceHash } from "../sourceHash";
+import { chunkText as modelChunkText } from "../../stella/models/embeddingModel";
 import {
   EMBED_CHUNK_TOKENS,
   EMBED_PER_COLUMN_LIMIT,
   EMBED_DATA_SAMPLE_N,
+  EMBED_SAMPLING_SEED,
+  EMBED_SAMPLING_VERSION,
 } from "../../config";
+import {
+  DATASET_TOP_INSIGHTS,
+  DATASET_TOP_QUALITY,
+  SNIPPET_ID,
+  SNIPPET_PROFILE,
+} from "../../config/knowledge";
 import {
   buildDatasetProfileEmbedding,
   buildDatasetDescriptionEmbedding,
@@ -25,37 +34,6 @@ import type {
  * Does not own vector storage; only translates semantic representation → KnowledgeRecord.
  * G24: reuses existing sampling + Rag pipelines, no duplicate engine.
  */
-
-async function sourceHash(text: string): Promise<string> {
-  try {
-    const hex = await hashString(text);
-    return hex.slice(0, 16);
-  } catch {
-    let h = 5381;
-    for (let i = 0; i < text.length; i++)
-      h = (Math.imul(33, h) ^ text.charCodeAt(i)) >>> 0;
-    return h.toString(36);
-  }
-}
-
-function chunkTextSimple(text: string, chunkTokens: number): string[] {
-  if (!text) return [];
-  const approxChars = chunkTokens * 4;
-  if (text.length <= approxChars) return [text];
-  const out: string[] = [];
-  let start = 0;
-  while (start < text.length) {
-    // try to break at newline
-    let end = Math.min(start + approxChars, text.length);
-    if (end < text.length) {
-      const lastNewline = text.lastIndexOf("\n", end);
-      if (lastNewline > start + approxChars * 0.5) end = lastNewline + 1;
-    }
-    out.push(text.slice(start, end).trim());
-    start = end;
-  }
-  return out.filter(Boolean);
-}
 
 export type DatasetKnowledgeProviderInput = {
   ragDatasets: Map<string, import("../../lib/rag/types").RagProfileState>;
@@ -90,8 +68,8 @@ export class DatasetKnowledgeProvider implements KnowledgeProvider {
       // Fallback for unit tests / local polymorpha when not injected — read from stores
       if (!src) {
         try {
-          const { useDataStore } = await import("@/store/useDataStore");
-          const { useRagStore } = await import("@/store/useRagStore");
+          const { useDataStore } = await import("../../store/useDataStore");
+          const { useRagStore } = await import("../../store/useRagStore");
           const dsState = (
             useDataStore as unknown as {
               getState: () => {
@@ -251,11 +229,11 @@ export class DatasetKnowledgeProvider implements KnowledgeProvider {
               datasetId,
               uploadId,
               String(contentHash),
-              datasetForRep as unknown as import("@/types").Dataset,
+              datasetForRep as unknown as import("../../types").Dataset,
               objective,
             );
             const shSynth = await sourceHash(
-              `${workspaceId}:${datasetId}:description:${synthetic.text.slice(0, 80)}`,
+              `${workspaceId}:${datasetId}:description:${synthetic.text.slice(0, SNIPPET_ID)}`,
             );
             out.push({
               id: `dataset:${datasetId}:description`,
@@ -299,7 +277,7 @@ export class DatasetKnowledgeProvider implements KnowledgeProvider {
                 uploadId,
                 String(contentHash),
                 profile.dataset,
-                datasetForRep as unknown as import("@/types").Dataset,
+                datasetForRep as unknown as import("../../types").Dataset,
               )
             : null;
           const text =
@@ -310,7 +288,7 @@ export class DatasetKnowledgeProvider implements KnowledgeProvider {
               .map(([k, v]) => `${k}:${v}`)
               .join(", ")}`;
           const sh = await sourceHash(
-            `${workspaceId}:${datasetId}:profile:${text.slice(0, 100)}`,
+            `${workspaceId}:${datasetId}:profile:${text.slice(0, SNIPPET_PROFILE)}`,
           );
           out.push({
             id: `dataset:${datasetId}:profile`,
@@ -351,14 +329,14 @@ export class DatasetKnowledgeProvider implements KnowledgeProvider {
               datasetId,
               uploadId,
               String(contentHash),
-              datasetForRep as unknown as import("@/types").Dataset,
+              datasetForRep as unknown as import("../../types").Dataset,
             );
           } catch {
             // ignore
           }
           for (const col of headerOnly) {
             const sh = await sourceHash(
-              `${workspaceId}:${datasetId}:col:${col.columnName}:${col.text.slice(0, 80)}`,
+              `${workspaceId}:${datasetId}:col:${col.columnName}:${col.text.slice(0, SNIPPET_ID)}`,
             );
             out.push({
               id: `dataset:${datasetId}:col:${col.columnName}`,
@@ -399,7 +377,7 @@ export class DatasetKnowledgeProvider implements KnowledgeProvider {
             );
           for (const col of colArtifacts) {
             const sh = await sourceHash(
-              `${workspaceId}:${datasetId}:col:${col.columnName}:${col.text.slice(0, 80)}`,
+              `${workspaceId}:${datasetId}:col:${col.columnName}:${col.text.slice(0, SNIPPET_ID)}`,
             );
             out.push({
               id: `dataset:${datasetId}:col:${col.columnName}`,
@@ -435,7 +413,7 @@ export class DatasetKnowledgeProvider implements KnowledgeProvider {
             for (const col of remaining) {
               const text = `Column "${col.name}" is ${col.type}`;
               const sh = await sourceHash(
-                `${workspaceId}:${datasetId}:col:${col.name}:${text.slice(0, 80)}`,
+                `${workspaceId}:${datasetId}:col:${col.name}:${text.slice(0, SNIPPET_ID)}`,
               );
               out.push({
                 id: `dataset:${datasetId}:col:${col.name}`,
@@ -476,11 +454,11 @@ export class DatasetKnowledgeProvider implements KnowledgeProvider {
             datasetId,
             uploadId,
             String(contentHash),
-            datasetForRep as unknown as import("@/types").Dataset,
+            datasetForRep as unknown as import("../../types").Dataset,
           );
           for (const col of headerOnly) {
             const sh = await sourceHash(
-              `${workspaceId}:${datasetId}:col:${col.columnName}:${col.text.slice(0, 80)}`,
+              `${workspaceId}:${datasetId}:col:${col.columnName}:${col.text.slice(0, SNIPPET_ID)}`,
             );
             out.push({
               id: `dataset:${datasetId}:col:${col.columnName}`,
@@ -519,8 +497,8 @@ export class DatasetKnowledgeProvider implements KnowledgeProvider {
             n: EMBED_DATA_SAMPLE_N,
             method: "stratified" as const,
             coverage: "sample" as const,
-            seed: "polymorpha-v1",
-            strategyVersion: "v1-head-tail-quantile-rare",
+            seed: EMBED_SAMPLING_SEED,
+            strategyVersion: EMBED_SAMPLING_VERSION,
           };
           let repRowIndices: number[][] = [];
 
@@ -531,7 +509,7 @@ export class DatasetKnowledgeProvider implements KnowledgeProvider {
                   datasetId,
                   uploadId,
                   String(contentHash),
-                  datasetForRep as unknown as import("@/types").Dataset,
+                  datasetForRep as unknown as import("../../types").Dataset,
                   profile.perColumn,
                   {
                     mode:
@@ -545,7 +523,7 @@ export class DatasetKnowledgeProvider implements KnowledgeProvider {
                 repSample = embeddings[0].metadata.sample;
                 // Serialize per-row texts then chunk by token budget
                 const serialized = embeddings.map((e) => e.text).join("\n");
-                const chunks = chunkTextSimple(serialized, EMBED_CHUNK_TOKENS);
+                const chunks = modelChunkText(serialized, EMBED_CHUNK_TOKENS);
                 repTexts = chunks;
                 // chunk row indices roughly proportionally
                 const perChunk = Math.ceil(
@@ -573,25 +551,25 @@ export class DatasetKnowledgeProvider implements KnowledgeProvider {
             profile.perColumn.length > 0
           ) {
             const synth = `Representative sample for ${datasetName} (${datasetId}): ${profile.perColumn
-              .slice(0, 5)
+              .slice(0, DATASET_TOP_INSIGHTS)
               .map(
                 (c) =>
                   `${c.name}(${c.type}) top ${
                     c.topK
-                      ?.slice(0, 3)
+                      ?.slice(0, DATASET_TOP_QUALITY)
                       .map((k) => `${k.value}`)
                       .join(", ") ?? "n/a"
                   }`,
               )
               .join(" | ")}`;
-            repTexts = chunkTextSimple(synth, EMBED_CHUNK_TOKENS);
+            repTexts = modelChunkText(synth, EMBED_CHUNK_TOKENS);
             repRowIndices = repTexts.map(() => []);
           }
 
           for (let i = 0; i < repTexts.length; i++) {
             const text = repTexts[i];
             const sh = await sourceHash(
-              `${workspaceId}:${datasetId}:rep:${i}:${text.slice(0, 80)}`,
+              `${workspaceId}:${datasetId}:rep:${i}:${text.slice(0, SNIPPET_ID)}`,
             );
             out.push({
               id: `dataset:${datasetId}:rep:${i}`,

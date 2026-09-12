@@ -6,8 +6,12 @@
  * G18 per-user isolation `uid:vector:contentHash:chunkId`, 20MB quota via clientStore.
  * G24 reuse: delegates IDB persistence to clientStore (mirrors CacheService pattern).
  */
-import type { EmbeddingVector } from "@/embeddings/EmbeddingService";
-import { cosineSimilarity } from "@/embeddings/EmbeddingService";
+import type { EmbeddingVector } from "../../embeddings/EmbeddingService";
+import { cosineSimilarity } from "../../embeddings/EmbeddingService";
+import {
+  RETRIEVAL_LIMIT_DEFAULT,
+  RETRIEVAL_TOP_K,
+} from "../../config/retrieval";
 import * as clientStore from "./clientStore";
 
 export type VectorRecord = {
@@ -62,19 +66,11 @@ export async function deleteVectorsByContentHash(
   await clientStore.deleteByContentHash(uid, contentHash);
 }
 
-export async function searchVectors(
-  _uid: string,
-  _queryEmbedding: EmbeddingVector,
-  _opts: { topK?: number; scope?: string } = {},
-): Promise<Array<{ record: VectorRecord; score: number }>> {
-  return [];
-}
-
 export async function federatedSearch(
   _uid: string,
   queryEmbedding: EmbeddingVector,
   candidates: VectorRecord[],
-  topK = 5,
+  topK = RETRIEVAL_TOP_K,
 ): Promise<Array<{ record: VectorRecord; score: number }>> {
   const scored = candidates.map((rec) => ({
     record: rec,
@@ -107,7 +103,7 @@ export async function search(
   uid: string,
   queryEmbedding: EmbeddingVector,
   filter: VectorFilter,
-  limit = 8,
+  limit = RETRIEVAL_LIMIT_DEFAULT,
 ): Promise<VectorSearchResult[]> {
   const all =
     filter.scope === "all"
@@ -128,7 +124,6 @@ export const vectorStore = {
   getVectors,
   getAllVectors,
   deleteVectorsByContentHash,
-  searchVectors,
   federatedSearch,
   clearAll: async () => clientStore.clearAll(),
 };

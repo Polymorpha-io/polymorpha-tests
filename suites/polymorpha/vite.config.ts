@@ -15,8 +15,6 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "src"),
-      "@mocks": path.resolve(__dirname, "tests/mocks"),
-      "@shared": path.resolve(__dirname, "../_shared"),
     },
   },
   server: {
@@ -164,7 +162,10 @@ export default defineConfig({
     setupFiles: ["./src/test/setup.ts"],
     include: ["tests/unit/**/*.test.{ts,tsx}", "tests/api/**/*.test.{ts,tsx}"],
     exclude: ["tests/e2e/**", "node_modules/**"],
-    reporters: ["default"],
+    // Fast defaults: dot reporter (CI uses --reporter=verbose explicitly),
+    // threads pool for parallel files. See plans/2026-09-11/dev-speed-tests-backend.md
+    reporters: ["dot"],
+    pool: "threads",
     deps: {
       // @ts-ignore — vitest types for deps.inline are outdated in this version
       inline: [/@polymorpha\/business-logic/, /@polymorpha\/stella/],
