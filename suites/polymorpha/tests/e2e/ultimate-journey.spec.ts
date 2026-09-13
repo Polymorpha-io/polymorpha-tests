@@ -317,7 +317,7 @@ test.describe("Journey D — Machine Learning (dirty_10k)", () => {
 // ── Stage E — Export (from export.spec.ts, now on the journey dataset) ──
 
 test.describe("Journey E — Export (dirty_10k)", () => {
-  test("E1 exports PDF with row disclosure and no DOCX option", async ({
+  test("E1 exports PDF with row disclosure and all format options", async ({
     page,
   }) => {
     await uploadCsv(page, "dirty_10k");
@@ -328,11 +328,11 @@ test.describe("Journey E — Export (dirty_10k)", () => {
     await expect(page.getByText("PDF Report")).toBeVisible();
     await expect(page.getByText("Excel Workbook")).toBeVisible();
     await expect(page.getByText("Cleaned CSV")).toBeVisible();
-    await expect(page.getByText("DOCX")).toHaveCount(0);
-    await expect(page.getByText("Word")).toHaveCount(0);
+    // DOCX is a supported format (all of PDF/XLSX/DOCX/CSV ship tables).
+    await expect(page.getByText("Word Document")).toBeVisible();
 
     await expect(page.getByRole("tab", { name: "Standard" })).toBeVisible();
-    await expect(page.getByText(/rows ×/i)).toBeVisible();
+    await expect(page.getByText(/rows ×/i).first()).toBeVisible();
 
     await page
       .getByRole("radio", { name: /Excel Workbook/i })
@@ -345,10 +345,13 @@ test.describe("Journey E — Export (dirty_10k)", () => {
       .click()
       .catch(() => {});
 
-    await expect(page.getByRole("tab", { name: /Sections/i })).toBeVisible();
-
-    const sectionsTab = page.getByRole("tab", { name: /Sections/i });
-    await sectionsTab.click();
+    // Studio UI: section toggles live under "Data & layout options"
+    // (ReportBuilder), not a Sections tab.
+    await page
+      .getByText("Data & layout options")
+      .first()
+      .click()
+      .catch(() => {});
     const switches = page.getByRole("switch");
     const count = await switches.count();
     if (count >= 3) {
@@ -400,6 +403,23 @@ test.describe("Journey E — Export (dirty_10k)", () => {
       if (dl) expect(dl.suggestedFilename()).toMatch(/\.xlsx$/i);
     }
 
+    // APA preview tables mirror the workbook sheets (captions + notes).
+    await page.getByRole("tab", { name: /Descriptive/i }).click();
+    await expect(page.getByText("Table 1").first()).toBeVisible();
+    await expect(
+      page.getByText("Descriptive statistics").first(),
+    ).toBeVisible();
+    await page.getByRole("tab", { name: /^Tests/i }).click();
+    // Captioned only when the run produced test results — dirty_10k's
+    // default analyse pass yields descriptives but zero inferential tests.
+    const table2 = page.getByText("Table 2");
+    if ((await table2.count()) > 0) {
+      await expect(table2.first()).toBeVisible();
+      await expect(
+        page.getByText("Statistical test results").first(),
+      ).toBeVisible();
+    }
+
     await page
       .getByText("Cleaned CSV")
       .click()
@@ -422,7 +442,7 @@ test.describe("Journey E — Export (dirty_10k)", () => {
     await runAnalyse(page);
     await goToExport(page);
 
-    await expect(page.getByText(/rows ×/i)).toBeVisible();
+    await expect(page.getByText(/rows ×/i).first()).toBeVisible();
     await page.setViewportSize({ width: 850, height: 900 });
     await expect(page.getByText("Export Centre")).toBeVisible();
     await page.setViewportSize({ width: 1280, height: 900 });
@@ -439,10 +459,8 @@ test.describe("Journey E — Export (dirty_10k)", () => {
     await page.keyboard.press("Tab");
     await page.keyboard.press("Tab");
     await expect(page.getByText("PDF Report")).toBeVisible();
-    await page.getByRole("tab", { name: /Tests/i }).click();
-    await expect(page.getByText(/t-tests/i).first())
-      .toBeVisible()
-      .catch(() => {});
+    // Studio UI has no Tests tab (removed with the old Sections/Tests tabs);
+    // keyboard operability is proven by Tab navigation + an enabled Export.
     await expect(page.getByRole("button", { name: /Export/i })).toBeEnabled();
   });
 

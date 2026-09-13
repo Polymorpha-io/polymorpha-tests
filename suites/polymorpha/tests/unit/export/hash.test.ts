@@ -1,10 +1,7 @@
 import { describe, it, expect } from "vitest";
-import {
-  hashDatasetSync,
-  hashExportPrefsSync,
-  composeExportHash,
-} from "@/features/export/lib/hash";
-import type { Dataset, ExportPreferences } from "@/types";
+import { hashExportPrefs, composeExportHash } from "@/features/export/lib/hash";
+import { hashDataset } from "@/lib/hash";
+import type { Dataset } from "@/types";
 import { DEFAULT_EXPORT_PREFERENCES } from "@/types";
 
 function ds(rows: number, cols: string[]): Dataset {
@@ -23,27 +20,27 @@ function ds(rows: number, cols: string[]): Dataset {
   } as unknown as Dataset;
 }
 
-describe("hashDatasetSync", () => {
-  it("deterministic", () => {
+describe("hashDataset", () => {
+  it("deterministic", async () => {
     const d = ds(5, ["a", "b"]);
-    expect(hashDatasetSync(d)).toBe(hashDatasetSync(d));
+    expect(await hashDataset(d)).toBe(await hashDataset(d));
   });
-  it("differs on row count", () => {
-    expect(hashDatasetSync(ds(5, ["a"]))).not.toBe(
-      hashDatasetSync(ds(6, ["a"])),
+  it("differs on row count", async () => {
+    expect(await hashDataset(ds(5, ["a"]))).not.toBe(
+      await hashDataset(ds(6, ["a"])),
     );
   });
 });
 
-describe("hashExportPrefsSync", () => {
-  it("deterministic for same prefs", () => {
-    const a = hashExportPrefsSync(DEFAULT_EXPORT_PREFERENCES);
-    const b = hashExportPrefsSync({ ...DEFAULT_EXPORT_PREFERENCES });
+describe("hashExportPrefs", () => {
+  it("deterministic for same prefs", async () => {
+    const a = await hashExportPrefs(DEFAULT_EXPORT_PREFERENCES);
+    const b = await hashExportPrefs({ ...DEFAULT_EXPORT_PREFERENCES });
     expect(a).toBe(b);
   });
-  it("changes when flag flips", () => {
-    const a = hashExportPrefsSync(DEFAULT_EXPORT_PREFERENCES);
-    const b = hashExportPrefsSync({
+  it("changes when flag flips", async () => {
+    const a = await hashExportPrefs(DEFAULT_EXPORT_PREFERENCES);
+    const b = await hashExportPrefs({
       ...DEFAULT_EXPORT_PREFERENCES,
       includeTests: !DEFAULT_EXPORT_PREFERENCES.includeTests,
     });

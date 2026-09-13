@@ -125,7 +125,10 @@ describe("apa captions and notes", () => {
       style: string;
     }>;
     expect(caption).toHaveLength(2);
-    expect(caption[0]).toMatchObject({ text: "Table 3", style: "tableCaptionNum" });
+    expect(caption[0]).toMatchObject({
+      text: "Table 3",
+      style: "tableCaptionNum",
+    });
     expect(caption[1]).toMatchObject({ style: "tableCaptionTitle" });
   });
 

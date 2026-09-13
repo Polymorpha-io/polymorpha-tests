@@ -84,7 +84,12 @@ export async function dismissStatsLevelPrompt(page: Page): Promise<void> {
 
 /** Advance from the Data Modeller to the data Preview step. */
 export async function goToPreview(page: Page): Promise<void> {
-  await continueTo(page, /Continue to Preview/i);
+  // Modeller UX now advances via its own "Save & Continue" (ModellerHeader);
+  // the pipeline toolbar action is null on the model step. Keep the legacy
+  // label as fallback.
+  await continueTo(page, /Save & Continue/i).catch(() =>
+    continueTo(page, /Continue to Preview/i),
+  );
   await dismissStatsLevelPrompt(page);
 }
 
