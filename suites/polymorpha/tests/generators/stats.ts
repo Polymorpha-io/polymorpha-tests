@@ -467,6 +467,210 @@ export function resultForAction(
         prop_mediated: 0.6,
         n: 20,
       };
+    case "andersonDarling":
+      return {
+        column: a,
+        test: "Anderson-Darling",
+        statistic: 0.75,
+        criticalValues: [0.576, 0.656, 0.787, 0.918],
+        significanceLevel: 0.05,
+        reject: false,
+        significant: false,
+        n: 20,
+      };
+    case "kolmogorovSmirnov":
+      return {
+        column: a,
+        test: "Kolmogorov-Smirnov",
+        statistic: 0.12,
+        pValue: 0.6,
+        significant: false,
+        n: 20,
+      };
+    case "cramerVonMises":
+      return {
+        column: a,
+        test: "Cramér-von Mises",
+        statistic: 0.08,
+        pValue: 0.5,
+        significant: false,
+        n: 20,
+      };
+    case "jarqueBera":
+      return {
+        column: a,
+        test: "Jarque-Bera",
+        statistic: 1.1,
+        pValue: 0.58,
+        significant: false,
+        n: 20,
+      };
+    case "bartlett":
+      return {
+        statistic: 2.4,
+        pValue: 0.3,
+        significant: false,
+        equalVariances: true,
+        nGroups: 3,
+      };
+    case "fligner":
+      return {
+        statistic: 1.8,
+        pValue: 0.4,
+        significant: false,
+        equalVariances: true,
+      };
+    case "ansari":
+      return { column: a, statistic: 30, pValue: 0.45, significant: false };
+    case "moodMedian":
+      return {
+        column: a,
+        statistic: 0.9,
+        pValue: 0.34,
+        significant: false,
+        median: 5,
+      };
+    case "brunnerMunzel":
+      return { column: a, statistic: 0.5, pValue: 0.62, significant: false };
+    case "tukeyHSD":
+      return {
+        pairs: [
+          {
+            group1: "A",
+            group2: "B",
+            meandiff: 1.5,
+            pAdj: 0.03,
+            lower: 0.2,
+            upper: 2.8,
+            reject: true,
+          },
+        ],
+        alpha: 0.05,
+        n: 30,
+        k: 3,
+      };
+    case "dunnTest":
+      return {
+        pairs: [
+          {
+            group1: "A",
+            group2: "B",
+            U: 12,
+            pValue: 0.04,
+            pAdj: 0.12,
+            significant: false,
+          },
+        ],
+        method: "bonferroni",
+        k: 3,
+      };
+    case "dunnett":
+      return {
+        pairs: [
+          {
+            group: "B",
+            control: "A",
+            statistic: 2.2,
+            pValue: 0.04,
+            significant: true,
+          },
+        ],
+        control: "A",
+        method: "dunnett",
+      };
+    case "gamesHowell":
+      return {
+        pairs: [
+          {
+            group1: "A",
+            group2: "B",
+            meanDiff: 1.5,
+            t: 2.4,
+            df: 18.5,
+            q: 3.4,
+            k: 3,
+            pValue: 0.03,
+            significant: true,
+          },
+        ],
+        k: 3,
+        n: 30,
+        method: "games-howell",
+      };
+    case "multipletests":
+      return {
+        method: "bonferroni",
+        alpha: 0.05,
+        original: [0.01, 0.04, 0.3],
+        corrected: [0.03, 0.12, 0.9],
+        reject: [true, false, false],
+        n: 3,
+      };
+    case "holm":
+      return {
+        method: "holm",
+        alpha: 0.05,
+        original: [0.01, 0.04, 0.3],
+        corrected: [0.03, 0.08, 0.3],
+        reject: [true, false, false],
+        n: 3,
+      };
+    case "sidak":
+      return {
+        method: "sidak",
+        alpha: 0.05,
+        original: [0.01, 0.04, 0.3],
+        corrected: [0.03, 0.11, 0.65],
+        reject: [true, false, false],
+        n: 3,
+      };
+    case "fdrBy":
+      return {
+        method: "fdr_by",
+        alpha: 0.05,
+        original: [0.01, 0.04, 0.3],
+        corrected: [0.03, 0.08, 0.4],
+        reject: [true, false, false],
+        n: 3,
+      };
+    case "boxcox":
+      return { transformed: [1.1, 1.4, 1.2], lambda: 0.5, n: 3 };
+    case "yeojohnson":
+      return { transformed: [0.9, 1.3, 1.1], lambda: 1.0, n: 3 };
+    case "bootstrapCI":
+      return {
+        statistic: 5.0,
+        estimate: 5.0,
+        ciLow: 4.2,
+        ciHigh: 5.8,
+        confidenceLevel: 0.95,
+        n: 20,
+      };
+    case "permutationTest":
+      return { column: a, statistic: 1.9, pValue: 0.06, significant: false };
+    case "breuschPagan":
+      return {
+        lmStatistic: 2.2,
+        pValue: 0.33,
+        fStatistic: 1.1,
+        fPValue: 0.35,
+        significant: false,
+        homoscedastic: true,
+      };
+    case "durbinWatson":
+      return {
+        durbinWatson: 1.9,
+        interpretation: "no autocorrelation",
+        n: 20,
+      };
+    case "cooksDistance":
+      return {
+        cooksDistance: [0.01, 0.02, 0.5],
+        threshold: 0.2,
+        flaggedIndices: [2],
+        flaggedCount: 1,
+        maxCook: 0.5,
+      };
     default:
       return { pValue: 0.5, significant: false };
   }

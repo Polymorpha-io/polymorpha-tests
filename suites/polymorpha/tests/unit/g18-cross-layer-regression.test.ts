@@ -225,7 +225,8 @@ vi.mock("@/config/firebase", () => ({
   getFirebaseStorage: () => null,
 }));
 
-vi.mock("@polymorpha/business-logic", () => ({
+vi.mock("@polymorpha/business-logic", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@polymorpha/business-logic")>()),
   compressBlobAsync: async (blob: Blob) => blob,
 }));
 

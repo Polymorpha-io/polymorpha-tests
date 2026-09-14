@@ -8,17 +8,20 @@ import { E2E_TIMEOUTS, TEST_IDS } from "@shared/constants";
  * isVisible check — otherwise it reappears mid-flow and blocks later clicks.
  */
 export async function dismissDisclaimer(page: Page): Promise<void> {
-  const accept = page.getByRole("button", {
-    name: /I understand, continue/i,
-  });
-  try {
-    await accept.waitFor({ state: "visible", timeout: E2E_TIMEOUTS.ui });
-    await accept.click();
-    await expect(accept)
-      .toHaveCount(0, { timeout: E2E_TIMEOUTS.ui })
-      .catch(() => {});
-  } catch {
-    // Never shown (already accepted / storage restored) — fine.
+  // Retry: under a busy dev server the modal can mount late or swallow the
+  // first click (enter animation). Bounded — absence is also fine.
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const accept = page.getByRole("button", {
+      name: /I understand, continue/i,
+    });
+    try {
+      await accept.waitFor({ state: "visible", timeout: E2E_TIMEOUTS.ui });
+      await accept.click({ force: true }).catch(() => accept.click());
+      await expect(accept).toHaveCount(0, { timeout: E2E_TIMEOUTS.ui });
+      return;
+    } catch {
+      // Never shown (already accepted / storage restored) — fine.
+    }
   }
 }
 

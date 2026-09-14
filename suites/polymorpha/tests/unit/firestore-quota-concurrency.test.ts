@@ -172,7 +172,8 @@ vi.mock("@/config/firebase", () => ({
   getFirebaseStorage: () => null,
 }));
 
-vi.mock("@polymorpha/business-logic", () => ({
+vi.mock("@polymorpha/business-logic", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@polymorpha/business-logic")>()),
   compressBlobAsync: async (blob: Blob) => blob,
 }));
 
@@ -286,7 +287,10 @@ describe("P0-B G18 quota atomicity (runTransaction)", () => {
 
   it("does not introduce `any` in new quota path", async () => {
     const fs = await import("node:fs");
-    const content = fs.readFileSync("src/lib/FirestoreService.ts", "utf-8");
+    const content = fs.readFileSync(
+      "suites/polymorpha/src/lib/FirestoreService.ts",
+      "utf-8",
+    );
     // Find the P0-B block between `await runTransaction` and `this.invalidateQuotas()`
     const idx = content.indexOf("await runTransaction");
     const block = idx >= 0 ? content.slice(idx, idx + 4000) : "";

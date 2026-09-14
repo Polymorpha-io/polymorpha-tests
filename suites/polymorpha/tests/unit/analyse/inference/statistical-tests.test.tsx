@@ -12,7 +12,8 @@ vi.mock('@/lib/stats/api', () => ({
   })
 }));
 
-vi.mock('@polymorpha/business-logic', () => ({
+vi.mock('@polymorpha/business-logic', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@polymorpha/business-logic')>()),
   MethodologyValidator: {
     validate: () => ({ blocks: [], warnings: [] })
   },

@@ -283,7 +283,10 @@ describe("P0-A G18 workspace cap concurrency (runTransaction)", () => {
     // This test is a placeholder for D22/G10: the transaction path should be typed
     // without `as any` on new lines. We assert the file does not contain new `as any` in the transaction block.
     const fs = await import("node:fs");
-    const content = fs.readFileSync("src/lib/WorkspaceCrud.ts", "utf-8");
+    const content = fs.readFileSync(
+      "suites/polymorpha/src/lib/WorkspaceCrud.ts",
+      "utf-8",
+    );
     // Extract the runTransaction block (from `await runTransaction` to `return newDocRef.id`)
     const txBlock = content.slice(content.indexOf("await runTransaction"));
     // Allow existing legacy `as unknown` in other files, but new P0-A block must not add `as any`
