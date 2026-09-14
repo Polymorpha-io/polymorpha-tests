@@ -72,4 +72,32 @@ test.describe("Polymorpha E2E — Stella Knowledge Plane", () => {
     });
     expect(ok).toBeTruthy();
   });
+
+  test("functionality plane: app-capability provider files served", async ({
+    page,
+  }) => {
+    await goToHome(page);
+    const providerResp = await page.request.get(
+      "/src/knowledge/providers/FunctionalityKnowledgeProvider.ts",
+    );
+    expect(providerResp.ok()).toBeTruthy();
+    const corpusResp = await page.request.get(
+      "/src/knowledge/functionalities.ts",
+    );
+    expect(corpusResp.ok()).toBeTruthy();
+  });
+
+  test("Stella greeting introduces Polymorpha and its pipeline", async ({
+    page,
+  }) => {
+    await goToHome(page);
+    await page.getByRole("button", { name: "Show Stella assistant" }).click();
+    const dialog = page.getByRole("dialog", { name: "Stella AI chat" });
+    await expect(dialog).toBeVisible();
+    await expect(dialog.getByText("Hi, I'm Stella!")).toBeVisible();
+    await expect(dialog.getByText(/Upload →/)).toBeVisible();
+    await expect(
+      dialog.getByRole("button", { name: "What can Polymorpha do?" }),
+    ).toBeVisible();
+  });
 });
