@@ -107,10 +107,43 @@ function githubHeaders() {
   return h;
 }
 
+const RETRYABLE_STATUS = new Set([408, 425, 429, 500, 502, 503, 504]);
+const FETCH_RETRIES = 3;
+const FETCH_BASE_MS = 500;
+
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+/**
+ * GitHub-only fetch with bounded retry on transient failures
+ * (429/5xx/network). Still throws after retries — no local fallback,
+ * no stale cache (G22.8/G19: fail loud, never serve drift).
+ */
+async function fetchGithub(url, options) {
+  let lastErr;
+  for (let attempt = 0; attempt <= FETCH_RETRIES; attempt++) {
+    let res;
+    try {
+      res = await fetch(url, options);
+    } catch (e) {
+      lastErr = e;
+      if (attempt < FETCH_RETRIES) {
+        await sleep(FETCH_BASE_MS * 2 ** attempt);
+        continue;
+      }
+      throw new Error(`fetch ${url}: network failed after ${FETCH_RETRIES + 1} tries: ${e.message}`);
+    }
+    if (res.ok) return res;
+    if (!RETRYABLE_STATUS.has(res.status) || attempt === FETCH_RETRIES) return res;
+    lastErr = new Error(`HTTP ${res.status}`);
+    await sleep(FETCH_BASE_MS * 2 ** attempt);
+  }
+  throw lastErr;
+}
+
 async function fetchRaw(repo, filePath) {
   const branch = "main";
   const url = `https://raw.githubusercontent.com/${repo}/${branch}/${filePath}`;
-  const res = await fetch(url, { headers: githubHeaders() });
+  const res = await fetchGithub(url, { headers: githubHeaders() });
   if (!res.ok) throw new Error(`fetch ${url}: HTTP ${res.status}`);
   const buf = await res.arrayBuffer();
   return Buffer.from(buf);
@@ -118,7 +151,7 @@ async function fetchRaw(repo, filePath) {
 
 async function listGithubFiles(repo, sha, prefix) {
   const apiUrl = `https://api.github.com/repos/${repo}/git/trees/${sha}?recursive=1`;
-  const res = await fetch(apiUrl, {
+  const res = await fetchGithub(apiUrl, {
     headers: githubHeaders(),
   });
   if (!res.ok) throw new Error(`list ${repo} ${prefix}: HTTP ${res.status}`);
