@@ -86,7 +86,7 @@ For EVERY implementation plan, feature plan, refactor, migration, or bug fix tha
 
 1. Inspect `polymorpha-tests/suites/{polymorpha,business-logic,stella}/` for relevant existing tests before implementation.
 2. Identify the affected central suites in the plan's verification section.
-3. Reuse or extend tests in `polymorpha-tests`; do not create a permanent parallel test under `polymorpha/tests/` or `polymorpha-stella/tests/` alone — mirror via `UPSTREAMS`.
+3. Reuse or extend tests in `polymorpha-tests`; tests are **authored here** — `polymorpha` hosts zero test files (all migrated 2026-09-19); `polymorpha-stella/tests/` canonical unit is mirrored via `UPSTREAMS`.
 4. Execute the relevant central test suite through the central registry after implementation.
 5. The plan MUST include a central-registry validation step, even when the change appears unrelated to tests.
 6. If no existing test applies, explicitly state why and add a central test when the behavior is testable.
@@ -155,14 +155,11 @@ Every widget E2E uses `fixtures/*.csv` (unified from `polymorpha/tests/mocks/`) 
 
 ---
 
-## Strict Inventory — Dual Residence
+## Strict Inventory — Central-Only (since 2026-09-19)
 
-`tests/unit/g10-strict-inventory.test.ts` (`P1-A G10`) **must exist in both**:
+`tests/unit/g10-strict-inventory.test.ts` (`P1-A G10`) lives **only here**: `suites/polymorpha/tests/unit/g10-strict-inventory.test.ts`. It inventories the mirrored app source (`suites/polymorpha/src` via `resolveSrcPath` fallback + tracked `suites/polymorpha/tsconfig.app.json` for `tsc --showConfig` `strict:true` + top-3 `any` 0 — `C10` `D1` batch format). `polymorpha` hosts **zero** test files (all migrated 2026-09-19).
 
-- `Polymorpha-io/polymorpha` `tests/unit/g10-strict-inventory.test.ts` (source of truth for `tsc -p tsconfig.app.json --showConfig` `strict:true` + top-3 `any` 0 — `C10` `D1` batch format)
-- `Polymorpha-io/polymorpha-tests` `suites/polymorpha/unit/g10-strict-inventory.test.ts` (mirror, CI gate `ci.yml` fails if drift — `diff -u` SHA-tracked).
-
-`npm run build` in `polymorpha` still runs `npx tsc -b --noEmit` (strict) but defers `vitest`/`pytest` to this repo (`polymorpha-tests` required status check). `G6` batch build + `G10` `any` justified per `D20` still enforced here (`D30` toolchain authority `prettier --check` `eslint` `tsc -b` `vitest` `pytest`).
+`npm run build` in `polymorpha` runs `tsc -b --noEmit` (strict) and defers `vitest`/`pytest` entirely to this repo (`polymorpha-tests` required status check; `npm run test:central` delegates here via `@polymorpha/tests`). `G6` batch build + `G10` `any` justified per `D20` still enforced here (`D30` toolchain authority `prettier --check` `eslint` `tsc -b` `vitest` `pytest`).
 
 ---
 
@@ -179,10 +176,10 @@ Every widget/component must have an E2E `T6` using `fixtures/*.csv`:
 
 | Item             | Detail |
 | ---------------- | ------ |
-| **Fetch source** | `raw.githubusercontent.com/Polymorpha-io/{polymorpha,polymorpha-business-logic,polymorpha-stella}/main/{tests, ts/src/knowledge, python/polymorpha_stella, vite.config.ts, playwright.config.ts, src/test/setup.ts, python/polymorpha/tests, cloud-functions/tests}` — **never `C:\Users\*`** (`G15`/`G15b`, user 2026-08-23) |
+| **Fetch source** | `raw.githubusercontent.com/Polymorpha-io/{polymorpha,polymorpha-business-logic,polymorpha-stella}/main/{src, package.json, ts/src/knowledge, python/polymorpha_stella, python/polymorpha/tests}` — polymorpha tests are authored HERE (no upstream test paths since 2026-09-19); **never `C:\Users\*`** (`G15`/`G15b`, user 2026-08-23) |
 | **Script**       | `scripts/sync.mjs` (`UPSTREAMS` `repo`/`dest`/`paths`, GitHub-only, no `localFallback`) — `node scripts/sync.mjs` (fetch + overwrite `suites/`), `--check` (fail if SHA stale vs `.sync-sha.json` `G21`) |
 | **SHA file**     | `.sync-sha.json` — 4 SHAs (`polymorpha` + `business-logic` + `stella` + `polymorpha-tests`) via `git ls-remote … HEAD` (`G21` hash truth) |
-| **Destinations** | `polymorpha` → `suites/polymorpha` + `suites` (`cloud-functions/tests`); `business-logic` → `suites/business-logic` (`python/polymorpha/tests`, `pyproject.toml`); `stella` → `suites/stella` (`tests/unit`, `ts/src/knowledge`, `python/polymorpha_stella`) |
+| **Destinations** | `polymorpha` → `suites/polymorpha` (`src` app-source mirror for `@/` alias + `package.json` only — tests/harness configs are tracked natively here since 2026-09-19); `business-logic` → `suites/business-logic` (`python/polymorpha/tests`, `pyproject.toml`); `stella` → `suites/stella` (`tests/unit`, `ts/src/knowledge`, `python/polymorpha_stella`) |
 | **When to sync** | Before any `npm run test:all`, before `npm run build` if an upstream `AGENTS.md` changed, and in every plan's `Verification` (`G22`) |
 | **Fail mode**    | **No fallback** — if `fetchRaw` 404 or API 503, `sync.mjs` throws with `Top-level keys` hint and exits 1 `G19`; `catch // ignore` and local `C:\Users\…` copies forbidden |
 
@@ -209,6 +206,7 @@ See `README.md` for provenance and `scripts/sync.mjs` for GitHub fetch implement
 ## Cross-References (source of truth for guardrails G15/G15b/G16/G16b/G22/G25/G26)
 
 - Logic layer detail: `Polymorpha-io/polymorpha-business-logic/AGENTS.md`
+- **Functionality catalog (G35):** `polymorpha-business-logic/statistical-functionalities/` — single source of truth for ALL functionality information; tests asserting function behavior/surfaces cross-reference it, never restate it
 - Stella library detail: `Polymorpha-io/polymorpha-stella/AGENTS.md` (`G15b`/`G16b`/`G25`/`G26` authoritative for knowledge/embedding/vector)
 - UI layer detail: `Polymorpha-io/polymorpha/AGENTS.md` (canonical guardrails + `G22` summary)
 - This file's `G22` contract is canonical for the Verification Layer; upstreams cite it via GitHub raw.

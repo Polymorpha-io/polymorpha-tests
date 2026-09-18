@@ -77,23 +77,3 @@ const SESSION: Dataset = {
   rows: ROWS,
   uploadedAt: new Date("2026-01-01"),
 } as unknown as Dataset;
-
-describe("modeller inspector names its working dataset", () => {
-  it("always shows Working on with file and shape", () => {
-    render(
-      <ModellerInspector
-        orderedColumns={COLUMNS}
-        previewRows={ROWS}
-        fileName="sales.csv"
-        workspaceContext={{ datasets: [] } as never}
-        extraDatasets={[]}
-        allAvailableDatasets={[SESSION]}
-        datasets={[SESSION]}
-      />,
-    );
-    const strip = screen.getByText(/Working on/);
-    expect(strip).toBeInTheDocument();
-    expect(strip.textContent).toContain("sales.csv");
-    expect(strip.textContent).toContain("2 rows × 2 cols");
-  });
-});

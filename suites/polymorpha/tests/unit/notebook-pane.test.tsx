@@ -63,6 +63,31 @@ import { toast } from "sonner";
 import { callExecuteApi, getDownloadUrlCached } from "@/lib/stats/api";
 import { NotebookPane } from "@/components/NotebookWorkbench/NotebookPane";
 import { DatasetVariablesPane } from "@/components/NotebookWorkbench/DatasetVariablesPane";
+import { DatasetInventoryContext } from "@/components/NotebookWorkbench/datasetInventoryContext";
+import { useNotebookDatasets } from "@/components/NotebookWorkbench/useNotebookDatasets";
+import type { NotebookDatasetRow } from "@/components/NotebookWorkbench/useNotebookDatasets";
+import { useLoadWorkspacePointer } from "@/components/NotebookWorkbench/useLoadWorkspacePointer";
+
+/** Test harness: a real inventory provider (session-only — no workspaceId)
+ *  around the pane, mirroring NotebookWorkbench's provider. */
+function InventoryHarness({ children }: { children: React.ReactNode }) {
+  const { rows, loading, lineageWarning } = useNotebookDatasets();
+  const { load, loadingUploadId } = useLoadWorkspacePointer();
+  return (
+    <DatasetInventoryContext.Provider
+      value={{
+        rows,
+        loading,
+        loadPointer: load,
+        loadingUploadId,
+        lineageWarning,
+        autoLoadWarning: null,
+      }}
+    >
+      {children}
+    </DatasetInventoryContext.Provider>
+  );
+}
 
 function dataset(fileName: string, rows: number, cols: number): Dataset {
   return {
@@ -228,6 +253,42 @@ describe("NotebookPane freeform cells", () => {
     expect(
       screen.getByDisplayValue("df = df.sort_values('c0')"),
     ).toBeInTheDocument();
+  });
+
+  it("pastes at the end of the notebook trail even when a middle cell is focused", () => {
+    const onPendingConsumed = vi.fn();
+    const { rerender } = render(
+      <NotebookPane
+        stage="model"
+        pendingSnippet={null}
+        onPendingConsumed={onPendingConsumed}
+      />,
+    );
+    // Focus a middle cell's editor (real DOM focus so React's onFocus
+    // capture registers it), then paste from the right lane.
+    const middle = screen.getAllByTestId("cell-editor-stub")[1];
+    act(() => middle.focus());
+    rerender(
+      <NotebookPane
+        stage="model"
+        pendingSnippet={{
+          text: "df = df.head()",
+          label: "tail paste",
+          nonce: 7,
+        }}
+        onPendingConsumed={onPendingConsumed}
+      />,
+    );
+    // The pasted cell is the LAST trail entry — right-lane work never
+    // inserts mid-trail (top-down pipeline history contract).
+    const rows = document.querySelectorAll(".nb-row");
+    expect(rows).toHaveLength(4);
+    expect(
+      within(rows[rows.length - 1] as HTMLElement).getByTestId(
+        "cell-editor-stub",
+      ),
+    ).toHaveValue("df = df.head()");
+    expect(onPendingConsumed).toHaveBeenCalled();
   });
 
   it("runs a cell and records output with an execution count", async () => {
@@ -1421,8 +1482,12 @@ describe("NotebookPane editor window (perf)", () => {
 
 describe("DatasetVariablesPane single-list render", () => {
   it("lists session frames in the Notebook datasets card and renders no registry", async () => {
-    render(<DatasetVariablesPane onHide={() => {}} />);
-    const section = await screen.findByLabelText("Notebook datasets list");
+    render(
+      <InventoryHarness>
+        <DatasetVariablesPane onHide={() => {}} />
+      </InventoryHarness>,
+    );
+    const section = await screen.findByLabelText("Notebook dataframes list");
     await waitFor(() => expect(section.textContent).not.toContain("Loading"));
     // Session rows: upload df + combine extra (the df registry tabs are gone).
     expect(section.textContent).toContain("df");
@@ -1456,8 +1521,12 @@ describe("DatasetVariablesPane single-list render", () => {
       ],
       kernelVarsStale: false,
     });
-    render(<DatasetVariablesPane onHide={() => {}} />);
-    const section = await screen.findByLabelText("Notebook datasets list");
+    render(
+      <InventoryHarness>
+        <DatasetVariablesPane onHide={() => {}} />
+      </InventoryHarness>,
+    );
+    const section = await screen.findByLabelText("Notebook dataframes list");
     await waitFor(() => expect(section.textContent).toContain("df2"));
     expect(section.textContent).not.toContain("alpha");
     // Peek opens the full overview popup (dataset dialog), not an inline tab.
@@ -3637,5 +3706,92 @@ describe("NotebookPane dataset-stale outputs", () => {
     expect(
       screen.queryByRole("button", { name: "Re-run stale cells" }),
     ).not.toBeInTheDocument();
+  });
+});
+
+describe("DatasetVariablesPane two-card lane", () => {
+  const varRow: NotebookDatasetRow = {
+    key: "var:df",
+    kind: "variable",
+    uploadId: "",
+    fileName: "modeled-cleaned.csv",
+    varName: "df",
+    rows: 4600,
+    cols: 18,
+    columns: [],
+    storageRef: "",
+    hasStorage: false,
+    missing: false,
+    inNotebook: true,
+    inWorkspace: false,
+    loaded: true,
+    mergeable: true,
+  };
+  const fileRow: NotebookDatasetRow = {
+    ...varRow,
+    key: "ws-only",
+    kind: "file",
+    uploadId: "u-only",
+    fileName: "modified_data.csv",
+    varName: null,
+    inNotebook: false,
+    inWorkspace: true,
+    loaded: false,
+  };
+
+  function renderPane(rows: NotebookDatasetRow[]) {
+    return render(
+      <DatasetInventoryContext.Provider
+        value={{
+          rows,
+          loading: false,
+          loadPointer: vi.fn().mockResolvedValue({ ok: true }),
+          loadingUploadId: null,
+          lineageWarning: null,
+          autoLoadWarning: null,
+          failedUploadIds: [],
+        }}
+      >
+        <DatasetVariablesPane onHide={() => {}} />
+      </DatasetInventoryContext.Provider>,
+    );
+  }
+
+  it("renders a Workspace datasets card below Notebook dataframes", () => {
+    renderPane([varRow, fileRow]);
+    expect(screen.getByLabelText("Notebook dataframes")).toBeDefined();
+    expect(screen.getByLabelText("Workspace datasets")).toBeDefined();
+  });
+
+  it("keeps cards disjoint: a variable never duplicates as a file row", () => {
+    renderPane([varRow, fileRow]);
+    fireEvent.click(screen.getByTitle("Expand notebook dataframes"));
+    const framesList = screen.getByLabelText("Notebook dataframes list");
+    const wsList = screen.getByLabelText("Workspace datasets list");
+    // The kernel variable renders only in the variables card.
+    expect(framesList.textContent).toContain("modeled-cleaned.csv");
+    expect(wsList.textContent).not.toContain("modeled-cleaned.csv");
+    // The workspace file renders only in the files card.
+    expect(wsList.textContent).toContain("modified_data.csv");
+    expect(framesList.textContent).not.toContain("modified_data.csv");
+  });
+
+  it("never renders a manual Load button (files open automatically)", () => {
+    renderPane([varRow, fileRow]);
+    expect(screen.queryByRole("button", { name: "Load" })).toBeNull();
+  });
+
+  it("keeps stale kernel rows visible but marked, out of merge claims", () => {
+    const staleRow: NotebookDatasetRow = {
+      ...varRow,
+      key: "var:stale",
+      fileName: "stale.csv",
+      stale: true,
+      mergeable: false,
+    };
+    renderPane([staleRow]);
+    fireEvent.click(screen.getByTitle("Expand notebook dataframes"));
+    const framesList = screen.getByLabelText("Notebook dataframes list");
+    expect(framesList.textContent).toContain("stale — run to refresh");
   });
 });

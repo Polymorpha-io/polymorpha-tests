@@ -199,8 +199,28 @@ describe("buildFrameOptions", () => {
     };
     const [opt] = buildFrameOptions([pointer], session);
     expect(opt.kind).toBe("pointer");
-    expect(opt.disabledReason).toMatch(/Load first/);
+    expect(opt.disabledReason).toMatch(/Not opened yet/);
     expect(opt.columns).toEqual([]);
+  });
+  it("enables schema'd pointers — measured columns, no load gate", () => {
+    const schemaPointer: DatasetVariable = {
+      ...liveVar("sales_2023", "sales-2023.csv"),
+      live: false,
+      liveDataset: null,
+      cols: 2,
+      source: "import",
+      schema: {
+        columns: [
+          { name: "age", type: "numeric", detectedType: "numeric" },
+          { name: "city", type: "string", detectedType: "string" },
+        ],
+        headRows: [],
+      },
+    };
+    const [opt] = buildFrameOptions([schemaPointer], session);
+    expect(opt.kind).toBe("pointer");
+    expect(opt.disabledReason).toBeUndefined();
+    expect(opt.columns.map((c) => c.name)).toEqual(["age", "city"]);
   });
   it("disables restored (stale) kernel frames until a Run re-measures", () => {
     const stale: DatasetVariable = {

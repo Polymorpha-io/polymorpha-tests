@@ -5,7 +5,8 @@
  * Fetches tests and harnesses from GitHub, never from C:\Users\... (G15/G15b/G22).
  * GitHub-only: uses raw.githubusercontent.com + GitHub API; fails fast if GitHub unavailable (G19).
  * Sources:
- *  - Polymorpha-io/polymorpha#main             -> tests/, vite.config.ts, playwright.config.ts, src/test/setup.ts, src, cloud-functions/tests
+ *  - Polymorpha-io/polymorpha#main             -> src (app source mirror for @/ alias), package.json
+ *    (tests are authored HERE — polymorpha hosts no test files; harness configs are tracked natively)
  *  - Polymorpha-io/polymorpha-business-logic#main -> python/polymorpha/tests, python/pyproject.toml
  *  - Polymorpha-io/polymorpha-stella#main      -> tests/unit, ts/src/knowledge, python/polymorpha_stella (G15b library)
  *
@@ -34,16 +35,7 @@ const UPSTREAMS = [
     repo: "Polymorpha-io/polymorpha",
     dest: "suites/polymorpha",
     paths: [
-      "tests/unit",
-      "tests/api",
-      "tests/e2e",
-      "tests/mocks",
-      "tests/generators",
-      "tests/tsconfig.json",
-      "src/test/setup.ts",
       "src",
-      "vite.config.ts",
-      "playwright.config.ts",
       "package.json",
     ],
   },
@@ -69,15 +61,6 @@ const UPSTREAMS = [
       "ts/src/notebook",
       "python/polymorpha_stella",
       "python/pyproject.toml",
-    ],
-  },
-  {
-    repo: "Polymorpha-io/polymorpha",
-    dest: "suites",
-    paths: [
-      "cloud-functions/tests/test_storage_isolation.py",
-      "cloud-functions/tests/test_g18_cross_layer.py",
-      "cloud-functions/stats/tests/test_legacy_contract.py",
     ],
   },
 ];

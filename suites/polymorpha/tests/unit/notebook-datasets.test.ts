@@ -1,9 +1,12 @@
 import { describe, it, expect } from "vitest";
 import {
-  mergeNotebookDatasets,
+  buildDatasetRows,
   shouldRegisterPointer,
 } from "@/components/NotebookWorkbench/useNotebookDatasets";
-import { originLabel } from "@/components/NotebookWorkbench/NotebookDatasetsSection";
+import {
+  judgeOperandKeys,
+  originLabel,
+} from "@/components/NotebookWorkbench/frames/datasetGroups";
 import type { WorkspaceDatasetMeta } from "@/components/NotebookWorkbench/useNotebookDatasets";
 import { buildVariables } from "@/components/NotebookWorkbench/variables";
 import type { Dataset } from "@/types";
@@ -47,66 +50,77 @@ const EMPTY_SNAP = {
   kernelVars: [],
 };
 
-describe("mergeNotebookDatasets", () => {
-  it("merges notebook + workspace + session, deduped by uploadId", () => {
+describe("buildDatasetRows (variables vs files)", () => {
+  it("keeps cards disjoint: a cell-used workspace file is one file row + provenance, never a twin", () => {
     const sessionVars = buildVariables({
       ...EMPTY_SNAP,
       raw: dataset("sales.csv", 690, 8),
       totalRowCount: 690,
     });
-    const rows = mergeNotebookDatasets({
-      notebookIds: ["up1", "up2"],
+    const rows = buildDatasetRows({
+      notebookIds: ["up1"],
       notebookTitles: { up1: "sales.csv" },
       workspaceDatasets: [
         wsMeta("up1", "sales.csv", 690, 8),
         wsMeta("up3", "churn.csv", 90, 3),
       ],
       sessionVars,
-      activeUploadId: "up1",
+      combineExtras: [],
     });
-    const byFile = new Map(rows.map((r) => [r.fileName, r]));
-    // up1: both notebook + workspace, live as df.
-    expect(byFile.get("sales.csv")).toMatchObject({
+    // Exactly one variable row (df) and two file rows — no dual membership.
+    const variableRows = rows.filter((r) => r.kind === "variable");
+    const fileRows = rows.filter((r) => r.kind === "file");
+    expect(variableRows.map((r) => r.varName)).toEqual(["df"]);
+    expect(fileRows.map((r) => r.fileName).sort()).toEqual([
+      "churn.csv",
+      "sales.csv",
+    ]);
+    // Provenance, not duplication: the file row knows the notebook used it.
+    const sales = fileRows.find((r) => r.fileName === "sales.csv");
+    expect(sales).toMatchObject({
       inNotebook: true,
-      inWorkspace: true,
-      loaded: true,
-      mergeable: true,
-      varName: "df",
-    });
-    // up2: notebook-only, unknown counts, not mergeable.
-    const nbOnly = rows.find((r) => r.uploadId === "up2");
-    expect(nbOnly).toMatchObject({
-      inNotebook: true,
-      inWorkspace: false,
-      rows: null,
-      mergeable: false,
-    });
-    // up3: workspace-only, mergeable via storage.
-    expect(byFile.get("churn.csv")).toMatchObject({
-      inNotebook: false,
       inWorkspace: true,
       loaded: false,
-      mergeable: true,
-      rows: 90,
+      varName: null,
     });
-    // Sort: both → notebook-only → workspace-only.
-    expect(rows.map((r) => r.fileName)).toEqual([
-      "sales.csv",
-      "up2",
-      "churn.csv",
-    ]);
   });
 
-  it("marks missing uploads unmergeable and keeps counts truthful", () => {
-    const rows = mergeNotebookDatasets({
+  it("file rows: pointer schema marks them ready; failures carry loadFailed", () => {
+    const rows = buildDatasetRows({
       notebookIds: [],
       workspaceDatasets: [
+        wsMeta("up1", "attached.csv", 90, 3),
+        wsMeta("up2", "failed.csv", 90, 3),
+        wsMeta("up3", "pending.csv", 90, 3),
         { ...wsMeta("up9", "gone.csv"), hasStorage: false, missing: true },
       ],
       sessionVars: [],
+      combineExtras: [
+        {
+          fileName: "attached.csv",
+          rowCount: 90,
+          columns: [{ name: "c0", type: "numeric", detectedType: "numeric" }],
+          head: [],
+        },
+      ],
+      failedUploadIds: ["up2"],
     });
-    expect(rows).toHaveLength(1);
-    expect(rows[0]).toMatchObject({
+    expect(rows.find((r) => r.fileName === "attached.csv")).toMatchObject({
+      loaded: true,
+      mergeable: true,
+      rows: 90,
+      cols: 1,
+      loadFailed: false,
+    });
+    expect(rows.find((r) => r.fileName === "failed.csv")).toMatchObject({
+      loaded: false,
+      loadFailed: true,
+    });
+    expect(rows.find((r) => r.fileName === "pending.csv")).toMatchObject({
+      loaded: false,
+      loadFailed: false,
+    });
+    expect(rows.find((r) => r.fileName === "gone.csv")).toMatchObject({
       missing: true,
       loaded: false,
       mergeable: false,
@@ -114,11 +128,23 @@ describe("mergeNotebookDatasets", () => {
     });
   });
 
-  it("lists session-only kernel frames (df2) for merging", () => {
+  it("variable rows: kernel frames, artifacts, and schema'd imports", () => {
     const sessionVars = buildVariables({
       ...EMPTY_SNAP,
       raw: dataset("df.csv", 10, 2),
       totalRowCount: 10,
+      combineExtras: [
+        {
+          fileName: "Training.csv",
+          rowCount: 4920,
+          columns: [
+            { name: "c0", type: "numeric", detectedType: "numeric" },
+            { name: "c1", type: "string", detectedType: "string" },
+          ],
+          head: [],
+        },
+        { fileName: "NoSchema.csv", rowCount: 5 },
+      ],
       kernelVars: [
         {
           name: "df2",
@@ -132,55 +158,49 @@ describe("mergeNotebookDatasets", () => {
             head: [{ c0: 1 }],
           },
         },
+        {
+          name: "df_ghost",
+          type: "DataFrame",
+          detail: "restored",
+          stage: "",
+          frame: { rows: 10, cols: 2, columns: ["c0", "c1"], head: [] },
+        },
       ],
+      kernelVarsStale: true,
     });
-    const rows = mergeNotebookDatasets({
+    const rows = buildDatasetRows({
       notebookIds: [],
       workspaceDatasets: [],
       sessionVars,
+      combineExtras: [],
     });
-    const df2 = rows.find((r) => r.varName === "df2");
-    expect(df2).toMatchObject({ loaded: true, mergeable: true, rows: 150 });
+    const vars = rows.filter((r) => r.kind === "variable");
+    // Live kernel frames + restored stale snapshot + schema'd import.
+    const df2 = vars.find((r) => r.varName === "df2");
+    expect(df2).toMatchObject({
+      loaded: true,
+      stale: true,
+      mergeable: false,
+      rows: 150,
+    });
     expect(df2?.columns).toEqual(["c0", "c1", "c2", "c3"]);
+    const training = vars.find((r) => r.fileName === "Training.csv");
+    expect(training).toMatchObject({
+      loaded: true,
+      mergeable: true,
+      rows: 4920,
+    });
+    expect(training?.columns).toEqual(["c0", "c1"]);
+    // Schema-less pointer: never mergeable, counts stay measured.
+    const noSchema = vars.find((r) => r.fileName === "NoSchema.csv");
+    expect(noSchema).toMatchObject({
+      loaded: false,
+      mergeable: false,
+      rows: 5,
+    });
   });
 
-  it("does not duplicate the active df when a row already links it", () => {
-    // Notebook row links the kernel `df` via the activeUploadId fallback;
-    // the session-only loop must not re-emit it under its pseudo-fileName
-    // (the kernel name), which produced the `df` notebook + `df` session twin.
-    const sessionVars = buildVariables({
-      ...EMPTY_SNAP,
-      raw: dataset("df.csv", 10, 2),
-      totalRowCount: 10,
-      kernelVars: [
-        {
-          name: "df",
-          type: "DataFrame",
-          detail: "10 rows × 2 cols",
-          stage: "stats",
-          frame: {
-            rows: 10,
-            cols: 2,
-            columns: ["c0", "c1"],
-            head: [{ c0: 1 }],
-          },
-        },
-      ],
-    });
-    const rows = mergeNotebookDatasets({
-      notebookIds: ["up1"],
-      notebookTitles: { up1: "df.csv" },
-      workspaceDatasets: [],
-      sessionVars,
-      activeUploadId: "up1",
-    });
-    const dfRows = rows.filter((r) => r.varName === "df");
-    expect(dfRows).toHaveLength(1);
-    expect(dfRows[0]).toMatchObject({ inNotebook: true, loaded: true });
-    expect(rows.some((r) => r.key === "session:df")).toBe(false);
-  });
-
-  it("surfaces out/cleaned as session rows (registry removal parity)", () => {
+  it("surfaces out/cleaned as variable rows (artifacts of cells)", () => {
     const sessionVars = buildVariables({
       ...EMPTY_SNAP,
       raw: dataset("df.csv", 10, 2),
@@ -189,13 +209,14 @@ describe("mergeNotebookDatasets", () => {
       computedHead: dataset("df.csv", 8, 2),
       cleaned: dataset("df.csv", 7, 2),
     });
-    const rows = mergeNotebookDatasets({
+    const rows = buildDatasetRows({
       notebookIds: [],
       workspaceDatasets: [],
       sessionVars,
     });
-    expect(rows.map((r) => r.varName)).toEqual(["df", "out", "cleaned"]);
-    expect(rows.find((r) => r.varName === "out")).toMatchObject({
+    const vars = rows.filter((r) => r.kind === "variable");
+    expect(vars.map((r) => r.varName)).toEqual(["df", "out", "cleaned"]);
+    expect(vars.find((r) => r.varName === "out")).toMatchObject({
       loaded: true,
       mergeable: true,
       rows: 8,
@@ -203,12 +224,15 @@ describe("mergeNotebookDatasets", () => {
   });
 
   it("never fabricates counts for unknown datasets", () => {
-    const rows = mergeNotebookDatasets({
+    const rows = buildDatasetRows({
       notebookIds: ["ghost-id"],
       sessionVars: [],
+      combineExtras: [],
     });
-    expect(rows[0].rows).toBeNull();
-    expect(rows[0].cols).toBeNull();
+    const ghost = rows.find((r) => r.uploadId === "ghost-id");
+    expect(ghost?.rows).toBeNull();
+    expect(ghost?.cols).toBeNull();
+    expect(ghost?.kind).toBe("file");
   });
 });
 
@@ -216,6 +240,7 @@ describe("originLabel", () => {
   it("reports both/notebook/workspace/session provenance", () => {
     const base = {
       key: "k",
+      kind: "file" as const,
       uploadId: "",
       fileName: "f.csv",
       varName: null,
@@ -282,5 +307,73 @@ describe("shouldRegisterPointer", () => {
         "",
       ),
     ).toBe(false);
+  });
+});
+
+describe("judgeOperandKeys", () => {
+  const base = {
+    how: "inner",
+    rightPicked: true,
+    keyChosen: true,
+    leftKind: null,
+    rightKind: null,
+    dtypeCovered: false,
+  };
+  const ctx = (over: Partial<typeof base>) => ({
+    ...base,
+    ...over,
+  });
+
+  it("R0 cross: keys unused — quiet", () => {
+    expect(
+      judgeOperandKeys(
+        ctx({ how: "cross", rightPicked: false, keyChosen: false }),
+      ),
+    ).toBeNull();
+  });
+
+  it("R1 no right operand: info", () => {
+    const hint = judgeOperandKeys(
+      ctx({ rightPicked: false, keyChosen: false }),
+    );
+    expect(hint?.level).toBe("info");
+    expect(hint?.msg).toMatch(/Pick a right operand/);
+  });
+
+  it("R5 right picked, no key: warn", () => {
+    const hint = judgeOperandKeys(ctx({ keyChosen: false }));
+    expect(hint?.level).toBe("warn");
+    expect(hint?.msg).toMatch(/Pick a key column/);
+  });
+
+  it("R3 key dtype mismatch: error (dormant while modals preflight-banner it)", () => {
+    const hint = judgeOperandKeys(
+      ctx({ leftKind: "numeric", rightKind: "text" }),
+    );
+    expect(hint?.level).toBe("error");
+    expect(hint?.msg).toMatch(
+      /Key type mismatch: left is numeric, right is text/,
+    );
+  });
+
+  it("R3 skipped when the modal banners dtype itself", () => {
+    expect(
+      judgeOperandKeys(
+        ctx({ leftKind: "numeric", rightKind: "text", dtypeCovered: true }),
+      ),
+    ).toBeNull();
+  });
+
+  it("quiet: compatible kinds, null/mixed kinds, no kinds", () => {
+    expect(
+      judgeOperandKeys(ctx({ leftKind: "numeric", rightKind: "numeric" })),
+    ).toBeNull();
+    expect(
+      judgeOperandKeys(ctx({ leftKind: "null", rightKind: "numeric" })),
+    ).toBeNull();
+    expect(
+      judgeOperandKeys(ctx({ leftKind: "mixed", rightKind: "text" })),
+    ).toBeNull();
+    expect(judgeOperandKeys(ctx())).toBeNull();
   });
 });

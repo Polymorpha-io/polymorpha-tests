@@ -3,13 +3,17 @@ import { readFileSync } from "fs";
 import { csvPath } from "@mocks/paths";
 
 /**
- * Workspace dataset open flow (auth-gated) + the dataset cache round-trip.
+ * Workspace dataset preview + Continue flow (auth-gated) + the dataset cache
+ * round-trip.
  *
- * Verifies (T6):
+ * Verifies (T6, POLY-WS-CONTINUE UX):
  *  - Firebase sign-in (saved session — see auth.setup.ts) → workspace →
- *    dataset upload (unique filename per run).
- *  - First open parses the full file via the backend (one /parse request).
- *  - Second open hits the IndexedDB dataset cache keyed by contentHash —
+ *    dataset upload (unique filename per run). Upload shows the read-only
+ *    preview modal — the pipeline is NOT opened.
+ *  - Clicking a dataset row previews it (cache-first, no store writes).
+ *  - "Continue" enters the workspace-connected notebooks (pipeline).
+ *  - First preview parses a slice via the backend (one /parse request).
+ *  - Second preview hits the IndexedDB dataset cache keyed by contentHash —
  *    NO /parse request fires (the loading optimization).
  *
  * Auth: session state is produced once by `tests/e2e/auth.setup.ts` (Firebase
@@ -49,13 +53,9 @@ async function uploadDataset(page: Page): Promise<string> {
   await page
     .locator('input[type="file"][accept*="csv"]')
     .setInputFiles({ name: fileName, mimeType: "text/csv", buffer });
-  // Upload auto-opens the pipeline with the parsed preview.
-  await expect(
-    page.getByRole("heading", {
-      name: `${fileName} · Data Modeller`,
-      exact: true,
-    }),
-  ).toBeVisible({ timeout: 60_000 });
+  // Upload shows the read-only preview modal (POLY-WS-CONTINUE) — never the
+  // pipeline.
+  await expect(page.getByRole("dialog")).toBeVisible({ timeout: 60_000 });
   // The Storage + Firestore record + workspace attach finish in the
   // background — wait for the progress overlay to clear before reloading,
   // otherwise the reload races the upload.
@@ -91,16 +91,21 @@ async function waitForDatasetRow(
   return false;
 }
 
-async function openDatasetFromWorkspace(
+async function previewDatasetFromWorkspace(
   page: Page,
   fileName: string,
 ): Promise<void> {
   await page.getByText(fileName).first().click();
+  await expect(page.getByRole("dialog")).toBeVisible({ timeout: 60_000 });
+  // Close the preview so the next step starts from the workspace page.
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("dialog")).toHaveCount(0, { timeout: 15_000 });
+}
+
+async function continueIntoNotebooks(page: Page): Promise<void> {
+  await page.getByRole("button", { name: "Continue", exact: true }).click();
   await expect(
-    page.getByRole("heading", {
-      name: `${fileName} · Data Modeller`,
-      exact: true,
-    }),
+    page.getByText(/Working in: /),
   ).toBeVisible({ timeout: 60_000 });
 }
 
@@ -146,15 +151,18 @@ test.describe("Workspace dataset loading", () => {
     }
     expect(rowReady).toBe(true);
 
-    // Open the dataset (full parse + cache write)
-    await openDatasetFromWorkspace(page, fileName);
-    const afterFirstOpen = parseCount;
-    expect(afterFirstOpen).toBeGreaterThan(afterUpload);
+    // Preview the dataset (sliced /parse + cache write) — the store stays
+    // untouched, so Continue hydrates it before entering the notebooks.
+    await previewDatasetFromWorkspace(page, fileName);
+    const afterFirstPreview = parseCount;
+    expect(afterFirstPreview).toBe(afterUpload + 1);
 
-    // Reload again and reopen — the IndexedDB cache (keyed by contentHash)
-    // must serve the dataset without any /parse round-trip.
+    await continueIntoNotebooks(page);
+
+    // Reload and preview again — the IndexedDB cache (keyed by contentHash)
+    // must serve the preview without any /parse round-trip.
     await page.goto(workspaceUrl, { waitUntil: "domcontentloaded" });
-    await openDatasetFromWorkspace(page, fileName);
-    expect(parseCount).toBe(afterFirstOpen);
+    await previewDatasetFromWorkspace(page, fileName);
+    expect(parseCount).toBe(afterFirstPreview);
   });
 });

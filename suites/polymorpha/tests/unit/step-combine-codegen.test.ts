@@ -113,4 +113,183 @@ describe("combine templates: right-operand binding", () => {
     // Invalid identifier falls back to the recorded file binding.
     expect(code).toContain('other = pd.read_csv("safe.csv")');
   });
+
+  it("emits concat kwargs outside the frame list (pre-existing bug fixed)", () => {
+    const { code } = stepToPython({
+      type: "concat",
+      axis: 0,
+      join: "inner",
+      ignoreIndex: true,
+      rightVarName: "df2",
+    } as never);
+    expect(code).toContain(
+      'df = pd.concat([df, other], axis=0, join="inner", ignore_index=True)',
+    );
+  });
+});
+
+describe("combine templates: left-operand choice (POLY-NB-OPERANDS)", () => {
+  it("rebinds df to a chosen kernel frame before the canonical merge", () => {
+    const { code } = stepToPython({
+      type: "merge",
+      leftOn: "id",
+      rightOn: "id",
+      how: "inner",
+      leftVarName: "out",
+      rightDatasetName: "churn.csv",
+    } as never);
+    // Right binding first, then the left rebinding, then the canonical
+    // statement (byte-stable).
+    expect(code).toBe(
+      "# join source: unknown source\n" +
+        'other = pd.read_csv("churn.csv")\n' +
+        "df = out\n" +
+        'df = pd.merge(df, other, left_on="id", right_on="id", how="inner")',
+    );
+  });
+
+  it("snapshots the original df before rebinding when right IS df (swap)", () => {
+    // Left = out, right = the active frame itself: `other = df` must alias
+    // the OLD df — a left-first order would collapse both operands to out.
+    const { code } = stepToPython({
+      type: "merge",
+      leftOn: "id",
+      rightOn: "id",
+      how: "left",
+      leftVarName: "out",
+      rightVarName: "df",
+    } as never);
+    const otherLine = code.indexOf("other = df");
+    const rebindLine = code.indexOf("df = out");
+    expect(otherLine).toBeGreaterThanOrEqual(0);
+    expect(rebindLine).toBeGreaterThan(otherLine);
+    expect(code).toContain(
+      'df = pd.merge(df, other, left_on="id", right_on="id", how="left")',
+    );
+  });
+
+  it("re-reads a chosen left file", () => {
+    const { code } = stepToPython({
+      type: "concat",
+      axis: 0,
+      leftDatasetName: "a.csv",
+      rightVarName: "df2",
+    } as never);
+    expect(code).toBe(
+      'other = df2\ndf = pd.read_csv("a.csv")\ndf = pd.concat([df, other], axis=0)',
+    );
+  });
+
+  it("skips the rebinding when the chosen left is df itself", () => {
+    const base = {
+      type: "merge",
+      leftOn: "id",
+      rightOn: "id",
+      how: "inner",
+      rightVarName: "df2",
+    } as never;
+    const withDfLeft = stepToPython({
+      ...base,
+      leftVarName: "df",
+    } as never).code;
+    expect(withDfLeft).toBe(stepToPython(base).code);
+  });
+
+  it("emits byte-identical code when no left operand is recorded (backward compat)", () => {
+    const legacy = {
+      type: "merge",
+      leftOn: "id",
+      rightOn: "id",
+      how: "inner",
+      rightDatasetName: "x.csv",
+    } as never;
+    // Old configs (no left fields at all) must produce exactly the
+    // pre-left-choice emission.
+    expect(stepToPython(legacy).code).toBe(
+      "# join source: unknown source\n" +
+        'other = pd.read_csv("x.csv")\n' +
+        'df = pd.merge(df, other, left_on="id", right_on="id", how="inner")',
+    );
+  });
+
+  it("round-trips a merge cell with a left kernel-var binding", () => {
+    const config = {
+      type: "merge",
+      leftOn: "id",
+      rightOn: "id",
+      how: "inner",
+      leftVarName: "out",
+      rightVarName: "df2",
+      rightDatasetName: "df2",
+    } as never;
+    const { code } = stepToPython(config);
+    const parsed = pythonToStep(code, config);
+    expect(parsed.ok).toBe(true);
+    if (parsed.ok) {
+      expect(parsed.config["leftVarName"]).toBe("out");
+      expect(parsed.config["leftDatasetName"]).toBeUndefined();
+      expect(parsed.config["rightVarName"]).toBe("df2");
+      // Regenerating from the parsed config is byte-stable.
+      expect(stepToPython(parsed.config as never).code).toBe(code);
+    }
+  });
+
+  it("round-trips a merge cell with a left file binding", () => {
+    const config = {
+      type: "merge",
+      leftOn: "id",
+      rightOn: "id",
+      how: "inner",
+      leftDatasetName: "a.csv",
+      rightDatasetName: "b.csv",
+    } as never;
+    const { code } = stepToPython(config);
+    const parsed = pythonToStep(code, config);
+    expect(parsed.ok).toBe(true);
+    if (parsed.ok) {
+      expect(parsed.config["leftDatasetName"]).toBe("a.csv");
+      expect(parsed.config["leftVarName"]).toBeUndefined();
+      expect(stepToPython(parsed.config as never).code).toBe(code);
+    }
+  });
+
+  it("recovers a hand-edited left/right binding swap", () => {
+    // A user reordering the two binding lines still parses fully.
+    const canonical =
+      'df = pd.merge(df, other, left_on="id", right_on="id", how="inner")';
+    const swapped = `df = out\nother = df2\n${canonical}`;
+    const parsed = pythonToStep(swapped, {
+      type: "merge",
+      leftOn: "id",
+      rightOn: "id",
+      how: "inner",
+      leftVarName: "stale",
+    } as never);
+    expect(parsed.ok).toBe(true);
+    if (parsed.ok) {
+      expect(parsed.config["leftVarName"]).toBe("out");
+      expect(parsed.config["rightVarName"]).toBe("df2");
+    }
+  });
+
+  it("binds the left operand in join and append templates", () => {
+    const join = stepToPython({
+      type: "join",
+      on: "id",
+      how: "outer",
+      leftVarName: "out",
+      rightVarName: "df2",
+    } as never).code;
+    expect(join).toBe(
+      'right = df2\ndf = out\ndf = df.merge(right, on="id", how="outer", suffixes=("_x", "_y"))',
+    );
+    const append = stepToPython({
+      type: "append",
+      leftDatasetName: "a.csv",
+      rightVarName: "df2",
+    } as never).code;
+    expect(append).toBe(
+      '# join source: unknown source\nother = df2\ndf = pd.read_csv("a.csv")\ndf = pd.concat([df, other], ignore_index=True)',
+    );
+  });
 });
