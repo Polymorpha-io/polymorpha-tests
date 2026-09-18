@@ -1419,19 +1419,25 @@ describe("NotebookPane editor window (perf)", () => {
   });
 });
 
-describe("DatasetVariablesPane registry render", () => {
-  it("lists df, imports, and the model head as DataFrame tabs", () => {
+describe("DatasetVariablesPane single-list render", () => {
+  it("lists session frames in the Notebook datasets card and renders no registry", async () => {
     render(<DatasetVariablesPane onHide={() => {}} />);
-    const tabs = screen.getByRole("tablist", {
-      name: "Dataset variables",
-    });
-    expect(tabs.textContent).toContain("df");
-    expect(tabs.textContent).toContain("test1");
-    expect(tabs.textContent).toContain("out");
-    expect(tabs.textContent).not.toContain("cleaned");
+    const section = await screen.findByLabelText("Notebook datasets list");
+    await waitFor(() => expect(section.textContent).not.toContain("Loading"));
+    // Session rows: upload df + combine extra (the df registry tabs are gone).
+    expect(section.textContent).toContain("df");
+    expect(section.textContent).toContain("test1");
+    // The old bottom registry (tabs/detail) is removed — merge lives in the
+    // right-lane op sheet.
+    expect(
+      screen.queryByRole("tablist", { name: "Dataset variables" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /^Merge/ }),
+    ).not.toBeInTheDocument();
   });
 
-  it("shows kernel DataFrames without Kernel branding and drops scalars", () => {
+  it("peeks a loaded kernel frame via the Overview popup, drops scalars", async () => {
     useDataStore.setState({
       kernelVars: [
         {
@@ -1448,17 +1454,19 @@ describe("DatasetVariablesPane registry render", () => {
         },
         { name: "alpha", type: "float64", detail: "0.45", stage: "model" },
       ],
+      kernelVarsStale: false,
     });
     render(<DatasetVariablesPane onHide={() => {}} />);
-    const tabs = screen.getByRole("tablist", {
-      name: "Dataset variables",
-    });
-    expect(tabs.textContent).toContain("df2");
-    expect(tabs.textContent).not.toContain("alpha");
-    expect(tabs.textContent).not.toContain("kernel");
-    expect(
-      screen.queryByRole("button", { name: "Kernel" }),
-    ).not.toBeInTheDocument();
+    const section = await screen.findByLabelText("Notebook datasets list");
+    await waitFor(() => expect(section.textContent).toContain("df2"));
+    expect(section.textContent).not.toContain("alpha");
+    // Peek opens the full overview popup (dataset dialog), not an inline tab.
+    const df2Row = screen.getByText("df2").closest("li");
+    expect(df2Row).not.toBeNull();
+    fireEvent.click(
+      within(df2Row as HTMLElement).getByRole("button", { name: "Peek" }),
+    );
+    expect(screen.getAllByRole("dialog").length).toBeGreaterThan(0);
   });
 });
 

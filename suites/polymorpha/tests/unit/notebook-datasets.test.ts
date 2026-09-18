@@ -1,9 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
-  buildMergeSnippet,
   mergeNotebookDatasets,
   shouldRegisterPointer,
-  varNameForFile,
 } from "@/components/NotebookWorkbench/useNotebookDatasets";
 import { originLabel } from "@/components/NotebookWorkbench/NotebookDatasetsSection";
 import type { WorkspaceDatasetMeta } from "@/components/NotebookWorkbench/useNotebookDatasets";
@@ -146,6 +144,64 @@ describe("mergeNotebookDatasets", () => {
     expect(df2?.columns).toEqual(["c0", "c1", "c2", "c3"]);
   });
 
+  it("does not duplicate the active df when a row already links it", () => {
+    // Notebook row links the kernel `df` via the activeUploadId fallback;
+    // the session-only loop must not re-emit it under its pseudo-fileName
+    // (the kernel name), which produced the `df` notebook + `df` session twin.
+    const sessionVars = buildVariables({
+      ...EMPTY_SNAP,
+      raw: dataset("df.csv", 10, 2),
+      totalRowCount: 10,
+      kernelVars: [
+        {
+          name: "df",
+          type: "DataFrame",
+          detail: "10 rows × 2 cols",
+          stage: "stats",
+          frame: {
+            rows: 10,
+            cols: 2,
+            columns: ["c0", "c1"],
+            head: [{ c0: 1 }],
+          },
+        },
+      ],
+    });
+    const rows = mergeNotebookDatasets({
+      notebookIds: ["up1"],
+      notebookTitles: { up1: "df.csv" },
+      workspaceDatasets: [],
+      sessionVars,
+      activeUploadId: "up1",
+    });
+    const dfRows = rows.filter((r) => r.varName === "df");
+    expect(dfRows).toHaveLength(1);
+    expect(dfRows[0]).toMatchObject({ inNotebook: true, loaded: true });
+    expect(rows.some((r) => r.key === "session:df")).toBe(false);
+  });
+
+  it("surfaces out/cleaned as session rows (registry removal parity)", () => {
+    const sessionVars = buildVariables({
+      ...EMPTY_SNAP,
+      raw: dataset("df.csv", 10, 2),
+      totalRowCount: 10,
+      hasAppliedSteps: true,
+      computedHead: dataset("df.csv", 8, 2),
+      cleaned: dataset("df.csv", 7, 2),
+    });
+    const rows = mergeNotebookDatasets({
+      notebookIds: [],
+      workspaceDatasets: [],
+      sessionVars,
+    });
+    expect(rows.map((r) => r.varName)).toEqual(["df", "out", "cleaned"]);
+    expect(rows.find((r) => r.varName === "out")).toMatchObject({
+      loaded: true,
+      mergeable: true,
+      rows: 8,
+    });
+  });
+
   it("never fabricates counts for unknown datasets", () => {
     const rows = mergeNotebookDatasets({
       notebookIds: ["ghost-id"],
@@ -184,61 +240,6 @@ describe("originLabel", () => {
     expect(
       originLabel({ ...base, inNotebook: false, inWorkspace: false }),
     ).toBe("session");
-  });
-});
-
-describe("varNameForFile", () => {
-  it("sanitizes stems and dedupes against taken names", () => {
-    const taken = new Set(["df"]);
-    expect(varNameForFile("sales-2024.csv", taken)).toBe("sales_2024");
-    expect(varNameForFile("sales-2024.csv", taken)).toBe("sales_2024_2");
-  });
-});
-
-describe("buildMergeSnippet", () => {
-  it("returns empty for fewer than two frames", () => {
-    expect(buildMergeSnippet([])).toBe("");
-    expect(
-      buildMergeSnippet([
-        { varName: "df", fileName: "a.csv", needsLoad: false },
-      ]),
-    ).toBe("");
-  });
-
-  it("merges two live frames on the shared column", () => {
-    const code = buildMergeSnippet(
-      [
-        { varName: "df", fileName: "sales.csv", needsLoad: false },
-        { varName: "df2", fileName: "churn.csv", needsLoad: false },
-      ],
-      { df: ["id", "amount"], df2: ["id", "churned"] },
-    );
-    expect(code).toContain('pd.merge(df, df2, how="inner", on="id")');
-    expect(code).toContain("print(merged.head().to_string())");
-    expect(code).toContain("print(merged.shape)");
-    expect(code).not.toContain("read_csv");
-  });
-
-  it("binds workspace files via read_csv and marks unknown keys TODO", () => {
-    const code = buildMergeSnippet([
-      { varName: "df", fileName: "sales.csv", needsLoad: false },
-      { varName: "churn", fileName: "churn.csv", needsLoad: true },
-    ]);
-    expect(code).toContain('churn = pd.read_csv("churn.csv")');
-    expect(code).toContain("TODO: replace with the join key");
-  });
-
-  it("chains three frames", () => {
-    const code = buildMergeSnippet(
-      [
-        { varName: "a", fileName: "a.csv", needsLoad: false },
-        { varName: "b", fileName: "b.csv", needsLoad: false },
-        { varName: "c", fileName: "c.csv", needsLoad: false },
-      ],
-      { a: ["id"], b: ["id"], c: ["id"] },
-    );
-    expect(code).toContain("pd.merge(a, b,");
-    expect(code).toContain("pd.merge(merged, c,");
   });
 });
 
