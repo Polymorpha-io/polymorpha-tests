@@ -4,22 +4,15 @@
 > (UTC 1:00–4:00 AM and 6:00–10:00 AM · UTC+8: 9 AM–12 noon and 2–6 PM).
 > If current time is peak, **ask the user to verify** before starting any AI task.
 
-> **Purpose:** Single source of truth for **all** test cases of the Polymorpha ecosystem — UI `vitest`/`playwright` E2E (11 sub-units inc. Stella 11, `T6` `concurrency>1`) + business-logic `ts` parity + `python/polymorpha/tests` 347 cases + `polymorpha-stella` `ts` parity + `python/polymorpha_stella` + `cloud-functions` G18. Upstreams `Polymorpha-io/polymorpha`, `Polymorpha-io/polymorpha-business-logic`, `Polymorpha-io/polymorpha-stella` are decluttered — their tests live here per `G22`. **GitHub-only, no local fallback** `G15`/`G15b` — `git+https://github.com/Polymorpha-io/{...}.git#main` → `node_modules/@polymorpha/{business-logic,stella}` + wheel, never `C:\Users\*`.
-> **Upstreams (GitHub-only):** `git+https://github.com/Polymorpha-io/polymorpha.git#main`, `git+https://github.com/Polymorpha-io/polymorpha-business-logic.git#main` (`python/` wheel `polymorpha`), `git+https://github.com/Polymorpha-io/polymorpha-stella.git#main` (`ts` `knowledge` + `python/polymorpha_stella` `StellaRagProfiler`). **NEVER** reference `C:\Users\shawn\Desktop\...` or any local sibling as primary — `raw.githubusercontent` only.
-> **Last updated:** 2026-08-23 · **Ticket prefix:** `POLY-`
+> **Purpose:** Single source of truth for **all** test cases of the Polymorpha ecosystem — UI `vitest`/`playwright` E2E (11 sub-units inc. Stella 11, `T6` `concurrency>1`) + business-logic `ts` parity + `python/polymorpha/tests` 347 cases + `polymorpha-stella` `ts` parity + `python/polymorpha_stella` + `cloud-functions` `G18`. Upstreams are decluttered — their tests live here per `G22`. **GitHub-only, no local fallback** `G15`/`G15b` — `git+https://github.com/Polymorpha-io/{...}.git#main`, never `C:\Users\*` or local siblings; `raw.githubusercontent` only.
+> **Upstreams (GitHub-only):** `polymorpha`, `polymorpha-business-logic` (`python/` wheel `polymorpha`), `polymorpha-stella` (`ts` `knowledge` + `python/polymorpha_stella` `StellaRagProfiler`).
+> **Last updated:** 2026-09-19 · **Ticket prefix:** `POLY-`
 
 ---
 
 ## Repository Role — Verification Layer (Central Registry)
 
-**This repo is the Verification Layer.** It owns every test that proves `polymorpha` (UI 11 sub-units), `polymorpha-business-logic` (Logic Layer), and `polymorpha-stella` (Stella Library `G25/G26`) work together. No upstream keeps a permanent parallel suite — they delegate here via `git+https`.
-
-| Layer              | Repo                                         | Contract                                                                                                                                                                                                                                                                                         |
-| ------------------ | -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Logic**          | `Polymorpha-io/polymorpha-business-logic`    | Owns domain logic (`DataCleaner`, `RecommendationLaws`, `hashDataset`, etc. `ts` + `python/polymorpha/{Stats,ML,Cleaner,IO}` wheel). Tests mirrored from `python/polymorpha/tests` (347 cases) into `suites/business-logic/python` via `scripts/sync.mjs` `G15` `git+https`.                     |
-| **Stella Library** | `Polymorpha-io/polymorpha-stella`            | Owns Stella/RAG/embedder/knowledge/vector/representation/notebook `G15b` `G25/G26` `ts` + `python/polymorpha_stella` `StellaRagProfiler`. Tests `tests/unit` 19+4 its `TS` `KnowledgeExtractor` + `python/polymorpha_stella` mirrored into `suites/stella` via `scripts/sync.mjs` `G15b`.        |
-| UI                 | `Polymorpha-io/polymorpha`                   | Owns React 19 + Zustand + Vite + Firebase/Workers 11 sub-units inc. Stella 11. Imports logic via `@polymorpha/business-logic` **and** `@polymorpha/stella` `git+https` per `G15`/`G15b`. `polymorpha/tests/` decluttered — only `g10-strict-inventory.test.ts` dual-resident `G22`.              |
-| **Verification**   | `Polymorpha-io/polymorpha-tests` (this repo) | Owns `suites/polymorpha/{unit,api,e2e,mocks,generators}` + `suites/business-logic/python` + `suites/stella/{unit,e2e,python}` + `suites/cloud-functions` + `fixtures/*.csv` + `scripts/sync.mjs` (GitHub-only `raw.githubusercontent`, hash truth `G21`). All 11 sub-units `T6` `concurrency>1`. |
+**This repo is the Verification Layer.** It owns every test that proves `polymorpha` (UI 11 sub-units), `polymorpha-business-logic` (Logic Layer), and `polymorpha-stella` (Stella Library `G25/G26`) work together. No upstream keeps a permanent parallel suite — they delegate here via `git+https`. Full 4-repo role/contract table: `Polymorpha-io/polymorpha/AGENTS.md` (canonical).
 
 **Rule:** For EVERY implementation plan that changes behavior in `polymorpha`, `polymorpha-business-logic`, **or `polymorpha-stella`**, the plan MUST identify and execute against the relevant central suite _here_ (not a local `tests/` mirror) — `suites/polymorpha` **or** `suites/business-logic` **or** `suites/stella`. See `G22` below.
 
@@ -83,11 +76,7 @@
 
 ### Cross-Repo Detail — canonical link
 
-> Graph + roles above stay canonical-identical with
-> `Polymorpha-io/polymorpha/AGENTS.md` (mirror rule). Workflow detail
-> (guardrail counterparts, G27 walk, classification matrix, example,
-> anti-pattern) lives in ONE place: `Polymorpha-io/polymorpha`
-> `docs/ecosystem.md` (`https://raw.githubusercontent.com/Polymorpha-io/polymorpha/main/docs/ecosystem.md`). This repo's step: verification `suites/{polymorpha,business-logic,stella}` + `fixtures` → `node scripts/sync.mjs --check` → `git push origin main` (`G22`).
+> Graph + roles stay canonical-identical with `Polymorpha-io/polymorpha/AGENTS.md` (mirror rule). Workflow detail (guardrail counterparts, `G27` walk, classification matrix) lives in ONE place: `polymorpha/docs/ecosystem.md`. This repo's step: verification `suites/{polymorpha,business-logic,stella}` + `fixtures` → `node scripts/sync.mjs --check` → `git push origin main` (`G22`).
 
 ## Global Guardrail — G22 (applies to all 4 repos) — Central Test Registry Is Mandatory
 
@@ -106,19 +95,19 @@ For EVERY implementation plan, feature plan, refactor, migration, or bug fix tha
 9. Central test synchronization MUST pass its freshness/hash check (`node scripts/sync.mjs --check` `G21` `UPSTREAMS` 4 SHAs) before tests are considered authoritative.
 10. Do not silently skip central tests because a local implementation test passes.
 
-Required plan pattern: `implementation → identify central suite → sync/check polymorpha-tests (4 upstreams) → run relevant central tests → build → integration/E2E validation`. When a feature introduces a new artifact, API, data path, retrieval path, storage path, or cross-layer contract, the plan MUST state which central test suite owns that contract. This rule applies to all future Polymorpha plans, including Stella, Notebook, Knowledge, Embedding, Data Services, Pipeline, Cloud Functions, Workspace, UI, and infrastructure work.
+Required plan pattern: `implementation → identify central suite → sync/check polymorpha-tests (4 upstreams) → run relevant central tests → build → integration/E2E validation`. A new artifact/API/data/retrieval/storage path or cross-layer contract → the plan MUST state which central suite owns it.
 
 **Before ANY test file is created or modified (`tests/**`, `**/*.test.*`, `**/*.spec.*`, `python/polymorpha/tests/**`, `python/polymorpha_stella/**`, `suites/**`) the LLM MUST:**
 
-1. `git ls-remote https://github.com/Polymorpha-io/polymorpha-tests.git HEAD` + `git ls-remote` for upstreams `polymorpha` + `business-logic` + `stella` to get `main` SHAs.
-2. Search **4 remotes via GitHub, not local**: `raw.githubusercontent.com/Polymorpha-io/polymorpha-tests/main/**`, `/polymorpha/main/**`, `/polymorpha-business-logic/main/**`, `/polymorpha-stella/main/**` (budget ≤3 `grep`/`glob` `E5`/`E9`). Also inspect this repo's `suites/` and `fixtures/`.
-3. Reuse: `@polymorpha/business-logic` `RecommendationLaws`/`DataCleaner` `G15`, `@polymorpha/stella` `KnowledgeService`/`BrainService` `G15b` `G25/G26`, `tests/mocks/*.csv` + `tests/generators/dataset.ts` `G20` fixtures (`numeric_small` `<30`, `wide_categorical` `14→52` one-hot, `dirty` `null/mixed/high-cardinality`), existing `suites/` helpers. Do not duplicate per `D18` `G17` `G21`.
-4. Run `node scripts/sync.mjs --check` (hash truth `G21` `UPSTREAMS` 4 SHAs) before `npm run test:all` — sync is GitHub-only (`scripts/sync.mjs` fetches `raw.githubusercontent`, **no `C:\Users\*`**).
-5. **Always push `polymorpha-tests` to `main` after any test suite change** — `git add` → `git commit` → `git push origin main` in `Polymorpha-io/polymorpha-tests` so CI and `polymorpha`'s `build` (which resolves `git+https://github.com/Polymorpha-io/polymorpha-tests.git#main`) always sees the latest.
+1. `git ls-remote` the 4 repos to get `main` SHAs.
+2. Search **4 remotes via GitHub, not local** (`raw.githubusercontent.com/Polymorpha-io/{polymorpha-tests,polymorpha,polymorpha-business-logic,polymorpha-stella}/main/**`), budget ≤3 `grep`/`glob` (`E5`/`E9`). Also inspect this repo's `suites/` and `fixtures/`.
+3. Reuse: `@polymorpha/business-logic` `RecommendationLaws`/`DataCleaner` `G15`, `@polymorpha/stella` `KnowledgeService`/`BrainService` `G15b` `G25/G26`, `tests/mocks/*.csv` + `tests/generators/dataset.ts` `G20` fixtures, existing `suites/` helpers. Do not duplicate (`D18`/`G17`/`G21`).
+4. Run `node scripts/sync.mjs --check` (hash truth `G21`, 4 SHAs) before `npm run test:all` — sync is GitHub-only, **no `C:\Users\*`**.
+5. **Always push `polymorpha-tests` to `main` after any test suite change** (`git add` → `git commit` → `git push origin main`) so CI and `polymorpha`'s `build` (resolves `git+…#main`) always sees the latest.
 
 ### Mandatory Future-Plan Contract
 
-This registry is authoritative. Every subsequent Polymorpha implementation plan MUST inspect `suites/{polymorpha,business-logic,stella}/` before coding, map changed behavior to one or more central suites, extend the central suite rather than adding a permanent test under `polymorpha/tests/` or `polymorpha-stella/tests/` alone, run `node scripts/sync.mjs --check` before validation, run the relevant central tests, and include the central test result in the plan's verification evidence. A plan is incomplete if it validates only the application repository's local tests.
+Every subsequent Polymorpha implementation plan MUST inspect `suites/{polymorpha,business-logic,stella}/` before coding, map changed behavior to central suites, extend them rather than adding parallel tests upstream, run `sync.mjs --check` before validation, and include central test results in the plan's verification evidence. A plan is incomplete if it validates only the application repo's local tests.
 
 ---
 
@@ -130,17 +119,17 @@ This registry is authoritative. Every subsequent Polymorpha implementation plan 
 
 | #   | Sub-Unit         | Central suite                                                                                                                                                                                                                                 | Fixture(s)                                                          | Key capability verified                                                                                                                                                                                                   |
 | --- | ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 01  | Pipeline         | `suites/polymorpha/e2e/pipeline.spec.ts`, `pipeline-smoke-no-loop.spec.ts`, `pipeline-cache.global.spec.ts`, `full-pipeline-ml.spec.ts` + `suites/polymorpha/unit/pipeline/*`                                                                 | `mixed.csv`, `minimal.csv`, `large.csv` (`ANON_MAX_ROWS=10k` slice) | 6-step flow `Upload→Model→Preview→Clean→Analyse→Export`, guest + workspace-embedded, `CacheService` T3 50MB LRU + `stepCacheHashes`/`hashDataset`                                                                         |
+| 01  | Pipeline         | `suites/polymorpha/e2e/pipeline.spec.ts`, `pipeline-smoke-no-loop.spec.ts`, `pipeline-cache.global.spec.ts`, `full-pipeline-ml.spec.ts` + `suites/polymorpha/unit/pipeline/*` | `mixed.csv`, `minimal.csv`, `large.csv` (`ANON_MAX_ROWS=10k` slice) | 6-step flow `Upload→Model→Preview→Clean→Analyse→Export`, guest + workspace-embedded, `CacheService` 50MB LRU + `stepCacheHashes`/`hashDataset` |
 | 02  | Workspace        | `suites/polymorpha/e2e/workspace-open.spec.ts` + `suites/polymorpha/unit/workspace-*`                                                                                                                                                         | `minimal.csv`, `spotify_subset.csv`                                 | CRUD, datasets/exports/notes, `FirestoreService` workspace persistence, `storagePath` `users/{uid}` vs `anonymous/pending` isolation                                                                                      |
 | 03  | Auth & User      | `suites/polymorpha/e2e/auth.setup.ts` + `suites/polymorpha/unit/auth/*`                                                                                                                                                                       | `minimal.csv`                                                       | Firebase Auth, `useAuthStore`, membership/Stripe gates                                                                                                                                                                    |
 | 04  | Data Services    | `suites/polymorpha/unit/data-services/*`, `cleaning/*`, `sanitize*`, `CacheService*`                                                                                                                                                          | `missing.csv`, `duplicates.csv`, `outliers.csv`, `unicode.csv`      | `IO.Parser` via `@polymorpha/business-logic`, `CompressionStream`/`fflate`, `hashDataset`, `ANON_MAX_ROWS=10k`/`50MB` quota                                                                                               |
 | 05  | Dictionary       | `suites/polymorpha/unit/dictionary/*` + `suites/polymorpha/e2e/stella-knowledge.spec.ts`                                                                                                                                                      | `anova.csv`, `correlation.csv`                                      | `terms.ts`/`enhanced_terms.json`, KaTeX rendering                                                                                                                                                                         |
 | 06  | Stats & Export   | `suites/polymorpha/e2e/cleaning-panel.spec.ts`, `analyse-run.spec.ts`, `export.spec.ts` + `suites/polymorpha/unit/analyse/*`, `export/*`, `generated/*`                                                                                       | `anova.csv`, `mann_whitney.csv`, `correlation.csv`, `skewed.csv`    | `DataCleaner`/`RecommendationLaws` → stats (`descriptive`/`correlation`/`testsRunner`/`callStatsApi*`) → `pdf`/`docx`/`xlsx` via `rowMappers`, `cart`                                                                     |
-| 07  | Cloud Functions  | `suites/cloud-functions/test_g18_cross_layer.py`, `test_storage_isolation.py`, `suites/polymorpha/api/*`                                                                                                                                      | `large.csv` 5000+ `LARGE_FILE_THRESHOLD`, `g18` concurrency         | Python `Stats`/`ML`/`Cleaner`/`IO` wheel (`polymorpha` from `node_modules/@polymorpha/business-logic/python`), `callCleanApi`/`callStatsApi*` `storagePath` fallback                                                      |
-| 08  | Infrastructure   | `suites/polymorpha/e2e/pipeline-cache.global.spec.ts`, `no-react-error-185.spec.ts` + `suites/polymorpha/unit/infra/*`                                                                                                                        | `large.csv`, `single_row.csv`                                       | Wrangler `wrangler.jsonc`/`src/worker.ts`, `public/_headers` CSP, `vite.config.ts`, Firebase `firestore.rules`/`storage.rules`                                                                                            |
+| 07  | Cloud Functions  | `suites/cloud-functions/test_g18_cross_layer.py`, `test_storage_isolation.py`, `suites/polymorpha/api/*`                                                                                                                                      | `large.csv` 5000+ `LARGE_FILE_THRESHOLD`, `g18` concurrency         | Python `Stats`/`ML`/`Cleaner`/`IO` wheel, `callCleanApi`/`callStatsApi*` `storagePath` fallback |
+| 08  | Infrastructure   | `suites/polymorpha/e2e/pipeline-cache.global.spec.ts`, `no-react-error-185.spec.ts` + `suites/polymorpha/unit/infra/*`                                                                                                                        | `large.csv`, `single_row.csv`                                       | Wrangler `wrangler.jsonc`/`src/worker.ts`, `public/_headers` CSP, `vite.config.ts`, Firebase rules |
 | 09  | Analytics        | `suites/polymorpha/unit/analytics/*`                                                                                                                                                                                                          | `minimal.csv`                                                       | Client/server tracking (`CacheService`/`WorkspaceService`)                                                                                                                                                                |
 | 10  | UI Primitives    | `suites/polymorpha/e2e/*` + `suites/polymorpha/unit/ui/*`                                                                                                                                                                                     | —                                                                   | `useAccessibleDialog` C7, `ErrorBoundary`, theme, ag-grid, lucide-react                                                                                                                                                   |
-| 11  | Stella/Knowledge | `suites/stella/unit/{knowledge/dataset-column,notebook/stella-notebook-pipeline}` (canonical `polymorpha-stella/tests/unit` mirrored) + `suites/polymorpha/e2e/stella-knowledge.spec.ts` `stella-rag.spec.ts` `notebook-stella-aware.spec.ts` | `missing.csv`, `minimal.csv` `G20` `concurrency>1`                  | `KnowledgeService.search()` `G25/G26` `KnowledgeRecord` 9 kinds `dataset_profile/column_semantic/data_representative/relationship/notebook_cell` `EmbeddingService` `VectorStore` `BrainService` `openai/gpt-oss-20b` SSE |
+| 11  | Stella/Knowledge | `suites/stella/unit/{knowledge/dataset-column,notebook/stella-notebook-pipeline}` (canonical `polymorpha-stella/tests/unit` mirrored) + `suites/polymorpha/e2e/stella-knowledge.spec.ts` `stella-rag.spec.ts` `notebook-stella-aware.spec.ts` | `missing.csv`, `minimal.csv` `G20` `concurrency>1`                  | `KnowledgeService.search()` `G25/G26` `KnowledgeRecord` 9 kinds, `EmbeddingService` `VectorStore` `BrainService` `openai/gpt-oss-20b` SSE |
 
 Every widget E2E uses `fixtures/*.csv` (unified from `polymorpha/tests/mocks/`) and `generators/dataset.ts` G20 fixtures via `suites/polymorpha/generators`.
 
@@ -188,14 +177,14 @@ Every widget/component must have an E2E `T6` using `fixtures/*.csv`:
 
 ## Sync Contract — GitHub-only, Hash Truth G21 (No Local Fallback)
 
-| Item             | Detail                                                                                                                                                                                                                                                                                                                                                                               |
-| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Fetch source** | `raw.githubusercontent.com/Polymorpha-io/{polymorpha,polymorpha-business-logic,polymorpha-stella}/main/{tests, ts/src/knowledge, python/polymorpha_stella, vite.config.ts, playwright.config.ts, src/test/setup.ts, python/polymorpha/tests, cloud-functions/tests}` — **never `C:\Users\*`** (user 2026-08-23 `fuck the local fallback` `G15`/`G15b`)                               |
-| **Script**       | `scripts/sync.mjs` (`UPSTREAMS` `repo`/`dest`/`paths` **GitHub-only, no `localFallback`**) — `node scripts/sync.mjs` (fetch + overwrite `suites/`), `node scripts/sync.mjs --check` (fail if SHA stale vs `.sync-sha.json` `G21`)                                                                                                                                                    |
-| **SHA file**     | `.sync-sha.json` `{ "Polymorpha-io/polymorpha": "<sha>", "Polymorpha-io/polymorpha-business-logic": "<sha>", "Polymorpha-io/polymorpha-stella": "<sha>" }` via `git ls-remote https://github.com/<repo>.git HEAD` (`G21` hash truth, now 4 SHAs)                                                                                                                                     |
-| **Destinations** | `polymorpha` → `suites/polymorpha` (`tests/unit`, `tests/api`, `tests/e2e`, `tests/mocks`→`fixtures`, `generators`, `src/test/setup.ts`, `vite.config.ts`) + `suites` (`cloud-functions/tests`); `business-logic` → `suites/business-logic` (`python/polymorpha/tests`, `pyproject.toml`); `stella` → `suites/stella` (`tests/unit`, `ts/src/knowledge`, `python/polymorpha_stella`) |
-| **When to sync** | Before any `npm run test:all`, before `npm run build` if `polymorpha`/`business-logic`/`stella` `AGENTS.md` changed, and in every plan's `Verification` before running central tests (`G22`)                                                                                                                                                                                         |
-| **Fail mode**    | **No fallback** — if `fetchRaw` 404 or `api.github.com` 503, `sync.mjs` throws `Error` with `Top-level keys` hint and exits 1 `G19` `catch // ignore` forbidden; do **not** silently use empty `rows=[]` or local `C:\Users\…` copy                                                                                                                                                  |
+| Item             | Detail |
+| ---------------- | ------ |
+| **Fetch source** | `raw.githubusercontent.com/Polymorpha-io/{polymorpha,polymorpha-business-logic,polymorpha-stella}/main/{tests, ts/src/knowledge, python/polymorpha_stella, vite.config.ts, playwright.config.ts, src/test/setup.ts, python/polymorpha/tests, cloud-functions/tests}` — **never `C:\Users\*`** (`G15`/`G15b`, user 2026-08-23) |
+| **Script**       | `scripts/sync.mjs` (`UPSTREAMS` `repo`/`dest`/`paths`, GitHub-only, no `localFallback`) — `node scripts/sync.mjs` (fetch + overwrite `suites/`), `--check` (fail if SHA stale vs `.sync-sha.json` `G21`) |
+| **SHA file**     | `.sync-sha.json` — 4 SHAs (`polymorpha` + `business-logic` + `stella` + `polymorpha-tests`) via `git ls-remote … HEAD` (`G21` hash truth) |
+| **Destinations** | `polymorpha` → `suites/polymorpha` + `suites` (`cloud-functions/tests`); `business-logic` → `suites/business-logic` (`python/polymorpha/tests`, `pyproject.toml`); `stella` → `suites/stella` (`tests/unit`, `ts/src/knowledge`, `python/polymorpha_stella`) |
+| **When to sync** | Before any `npm run test:all`, before `npm run build` if an upstream `AGENTS.md` changed, and in every plan's `Verification` (`G22`) |
+| **Fail mode**    | **No fallback** — if `fetchRaw` 404 or API 503, `sync.mjs` throws with `Top-level keys` hint and exits 1 `G19`; `catch // ignore` and local `C:\Users\…` copies forbidden |
 
 See `README.md` for provenance and `scripts/sync.mjs` for the `UPSTREAMS` definition (now 4 entries, `localFallback` removed).
 
@@ -219,7 +208,21 @@ See `README.md` for provenance and `scripts/sync.mjs` for GitHub fetch implement
 
 ## Cross-References (source of truth for guardrails G15/G15b/G16/G16b/G22/G25/G26)
 
-- Logic layer detail: `https://raw.githubusercontent.com/Polymorpha-io/polymorpha-business-logic/main/AGENTS.md`
-- Stella library detail: `https://raw.githubusercontent.com/Polymorpha-io/polymorpha-stella/main/AGENTS.md` (`G15b`/`G16b`/`G25`/`G26` authoritative for knowledge/embedding/vector)
-- UI layer detail: `https://raw.githubusercontent.com/Polymorpha-io/polymorpha/main/AGENTS.md`
-- This file’s `G22` 10-point contract is canonical for the Verification Layer; upstreams cite it via GitHub raw.
+- Logic layer detail: `Polymorpha-io/polymorpha-business-logic/AGENTS.md`
+- Stella library detail: `Polymorpha-io/polymorpha-stella/AGENTS.md` (`G15b`/`G16b`/`G25`/`G26` authoritative for knowledge/embedding/vector)
+- UI layer detail: `Polymorpha-io/polymorpha/AGENTS.md` (canonical guardrails + `G22` summary)
+- This file's `G22` contract is canonical for the Verification Layer; upstreams cite it via GitHub raw.
+
+---
+
+## Token Efficiency (TE)
+
+Session-behavior prompts — save tokens by construction. Definitions: `Polymorpha-io/polymorpha/AGENTS.md#token-efficiency-te`.
+
+| Rule | Prompt |
+| --- | --- |
+| **TE1** | **Context reuse.** Never re-read a file already read this session; reuse plan-file discoveries and prior search results (`E8`/`E14`/`E15`). |
+| **TE2** | **Tool frugality.** Batch independent tool calls in parallel; ≤3 targeted greps/globs before broadening (`E7`); search exact symbols first (`E5`). |
+| **TE3** | **Output budget.** No preamble/postamble/summaries; cite `file:line` instead of pasting code; never echo diffs or code back unless asked. |
+| **TE4** | **One-pass investigation.** Record findings in the plan file so later sessions never rediscover them; compress discoveries into a working model, then stop reading (`E15`). |
+| **TE5** | **Progressive validation.** Cheapest check first: syntax/type → targeted test → single build per batch (`G6`). Never restart servers between individual edits. |
