@@ -138,6 +138,16 @@ export default defineConfig({
           if (id.includes("docx")) return "docx";
           if (id.includes("xlsx")) return "excel";
           if (id.includes("katex")) return "katex";
+          // Monaco split: python grammar + workers load lazily behind the
+          // React.lazy CellCodeEditor, so first paint never waits for them.
+          // Order matters — workers and python match before the core rule.
+          if (id.includes("monaco-editor") && /\.worker\.js(\?|$)/.test(id))
+            return "monaco-workers";
+          if (
+            id.includes("monaco-editor") &&
+            id.includes("basic-languages/python")
+          )
+            return "monaco-python";
           if (id.includes("monaco-editor")) return "monaco";
           if (id.includes("ag-grid")) return "ag-grid";
           if (id.includes("@xenova") || id.includes("transformers"))
@@ -166,6 +176,11 @@ export default defineConfig({
     // threads pool for parallel files. See plans/2026-09-11/dev-speed-tests-backend.md
     reporters: ["dot"],
     pool: "threads",
+    // OOM guard: 10 default workers × plotly/monaco/ag-grid imports abort
+    // natively under memory contention (16GB box, concurrent sessions).
+    // NOTE (Vitest 4): `poolOptions.threads` was removed — it only logs a
+    // deprecation warning and is ignored. Worker cap is top-level now.
+    maxWorkers: 4,
     deps: {
       // @ts-ignore — vitest types for deps.inline are outdated in this version
       inline: [/@polymorpha\/business-logic/, /@polymorpha\/stella/],

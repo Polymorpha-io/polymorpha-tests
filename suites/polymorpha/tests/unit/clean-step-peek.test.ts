@@ -74,3 +74,56 @@ describe("previewStepRows", () => {
     expect(peek?.totalRows).toBe(6);
   });
 });
+
+describe("bin quantile mode", () => {
+  const SKEWED: Dataset = {
+    fileName: "prices.csv",
+    uploadedAt: new Date(0),
+    columns: [{ name: "price", type: "numeric", detectedType: "numeric" }],
+    rows: [
+      ...Array.from({ length: 97 }, (_, i) => ({ price: 100000 + i * 1000 })),
+      { price: 5000000 },
+      { price: 6000000 },
+      { price: 7700000 },
+    ],
+  } as unknown as Dataset;
+
+  it("equal-width bins collapse skewed data into one bin", () => {
+    const c = buildDefaultConfig(SKEWED);
+    c.binRules = [
+      {
+        column: "price",
+        bins: 4,
+        labels: ["low", "medium", "high", "wealthy"],
+      },
+    ];
+    const peek = previewStepRows(SKEWED, c, CLEAN_STEPS.bin);
+    expect(peek?.assoc).toEqual(["price"]);
+    const bins = (peek?.after.rows ?? []).map((r) => r["price_bin"]);
+    expect(bins[0]).toBe("low");
+  });
+
+  it("quantile bins split skewed data into equal counts", () => {
+    const c = buildDefaultConfig(SKEWED);
+    c.binRules = [
+      {
+        column: "price",
+        bins: 4,
+        labels: ["low", "medium", "high", "wealthy"],
+        method: "quantile",
+      },
+    ];
+    const peek = previewStepRows(SKEWED, c, CLEAN_STEPS.bin);
+    expect(peek?.assoc).toEqual(["price"]);
+    const counts = new Map<string, number>();
+    for (const r of peek?.after.rows ?? [])
+      counts.set(
+        String(r["price_bin"]),
+        (counts.get(String(r["price_bin"])) ?? 0) + 1,
+      );
+    expect(counts.get("low")).toBe(25);
+    expect(counts.get("medium")).toBe(25);
+    expect(counts.get("high")).toBe(25);
+    expect(counts.get("wealthy")).toBe(25);
+  });
+});

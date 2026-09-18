@@ -7,7 +7,12 @@ export type KnowledgeKind =
   | "data_representative"
   | "relationship"
   | "note"
-  | "error";
+  | "error"
+  | "functionality"
+  | "guide";
+
+/** Request-scoped provider-result memo (see KnowledgeSearchRequest.memo). */
+export type ProviderMemo = Map<string, KnowledgeRecord[]>;
 
 /** Migration from legacy kinds stored in IDB before 2026-08-23 */
 export const LEGACY_KIND_MAP: Record<string, KnowledgeKind> = {
@@ -30,7 +35,9 @@ export function normalizeKind(raw: string): KnowledgeKind {
     raw === "data_representative" ||
     raw === "relationship" ||
     raw === "note" ||
-    raw === "error"
+    raw === "error" ||
+    raw === "functionality" ||
+    raw === "guide"
   )
     return raw;
   return (LEGACY_KIND_MAP[raw] ?? "notebook_output") as KnowledgeKind;
@@ -92,6 +99,15 @@ export interface KnowledgeSearchRequest {
   includeSuperseded?: boolean;
   includeSystemKnowledge?: boolean;
   limit?: number;
+  /** Extra rewrite terms merged into the BM25 bag (LLM expansion). */
+  extraTerms?: string;
+  /**
+   * Request-scoped provider memo (caller-owned Map). Dedupes dataset /
+   * relationship / dictionary / functionality provider passes within one
+   * answer turn (e.g. builder search + main search). Never shared across
+   * requests — zero staleness by construction.
+   */
+  memo?: ProviderMemo;
 }
 
 /** Back-compat: singular datasetId/cellId aliases datasetIds/activeCellId */

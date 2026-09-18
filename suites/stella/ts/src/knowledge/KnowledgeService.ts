@@ -3,25 +3,42 @@ import type {
   KnowledgeSearchOptions,
   KnowledgeSearchRequest,
   KnowledgeResult,
+  ProviderMemo,
 } from "./types";
 import { knowledgeStore } from "./KnowledgeStore";
 import {
   embeddingService,
   cosineSimilarity,
 } from "../embeddings/EmbeddingService";
+import {
+  embeddingCache,
+  buildEmbeddingKey,
+} from "../embeddings/EmbeddingCache";
+import { bm25Scores, rankIndices, rrfFuse, tokenizeText } from "./hybridSearch";
+import type { EmbeddingEntry } from "../embeddings/types";
+import { EMBED_MODEL } from "../config";
+import { EMBED_CACHE_VERSION } from "../config/retrieval";
 import { knowledgeExtractor } from "./KnowledgeExtractor";
 import type { Notebook } from "../notebook/types";
 import { notebookRepository } from "../notebook/NotebookRepository";
 import { DatasetKnowledgeProvider } from "./providers/DatasetKnowledgeProvider";
 import { RelationshipKnowledgeProvider } from "./providers/RelationshipKnowledgeProvider";
+import { FunctionalityKnowledgeProvider } from "./providers/FunctionalityKnowledgeProvider";
 import { DICTIONARY_TERMS } from "@polymorpha/business-logic";
 import {
+  DICTIONARY_QUERY_TOP,
   DICTIONARY_TERMS_LIMIT,
+  HYBRID_ENABLED,
+  QUERY_EXPANSION_ENABLED,
+  RERANK_CANDIDATES,
+  RERANK_ENABLED,
   RETRIEVAL_LIMIT_DATA,
   RETRIEVAL_LIMIT_DEFAULT,
   SCORE_BOOSTS,
   SCORE_FALLBACK,
 } from "../config/retrieval";
+import { mmrSelect, rerankCandidates } from "./reranker";
+import { expandQueryTerms, mergeTermBags } from "./queryExpansion";
 
 export interface KnowledgeProvider {
   provide(
@@ -30,9 +47,37 @@ export interface KnowledgeProvider {
   ): Promise<KnowledgeRecord[]>;
 }
 
+/**
+ * Keyword prefilter over dictionary terms (no embeddings spent).
+ * Scores by query-token overlap against term+definition+category; stable
+ * sort preserves the curated order on ties/zero overlap, so a query with
+ * no lexical match degrades to the previous first-N bias — never a cliff.
+ */
+function rankDictionaryTerms(
+  query: string,
+  terms: typeof DICTIONARY_TERMS,
+): typeof DICTIONARY_TERMS {
+  const tokens = tokenizeText(query);
+  if (tokens.length === 0) return [...terms];
+  const scored = terms.map((t) => {
+    const hay =
+      `${t.term} ${t.definition} ${t.quickTake ?? ""} ${t.category}`.toLowerCase();
+    let hits = 0;
+    for (const tok of tokens) if (hay.includes(tok)) hits++;
+    return { t, hits };
+  });
+  scored.sort((a, b) => b.hits - a.hits);
+  return scored.map((s) => s.t);
+}
+
 class DictionaryKnowledgeProvider implements KnowledgeProvider {
-  async provide(): Promise<KnowledgeRecord[]> {
-    return DICTIONARY_TERMS.slice(0, DICTIONARY_TERMS_LIMIT).map((t) => ({
+  async provide(query = ""): Promise<KnowledgeRecord[]> {
+    const terms = DICTIONARY_TERMS.slice(0, DICTIONARY_TERMS_LIMIT);
+    const ranked = rankDictionaryTerms(query, terms).slice(
+      0,
+      DICTIONARY_QUERY_TOP,
+    );
+    return ranked.map((t) => ({
       id: `dict::${t.id}`,
       workspaceId: "system",
       notebookId: "system",
@@ -62,6 +107,8 @@ function normalizeSearchOpts(
   includeSuperseded: boolean;
   limit: number;
   query: string;
+  extraTerms: string;
+  memo: ProviderMemo;
 } {
   const anyOpts = opts as unknown as Record<string, unknown>;
   const workspaceId = (anyOpts.workspaceId as string) ?? "";
@@ -90,6 +137,8 @@ function normalizeSearchOpts(
     (kinds?.includes("data_representative")
       ? RETRIEVAL_LIMIT_DATA
       : RETRIEVAL_LIMIT_DEFAULT);
+  const extraTerms = (anyOpts.extraTerms as string | undefined) ?? "";
+  const memo = (anyOpts.memo as ProviderMemo | undefined) ?? new Map();
   return {
     workspaceId,
     notebookId,
@@ -102,6 +151,8 @@ function normalizeSearchOpts(
     includeSuperseded,
     limit,
     query,
+    extraTerms,
+    memo,
   };
 }
 
@@ -109,6 +160,7 @@ export class KnowledgeService {
   private dictProvider = new DictionaryKnowledgeProvider();
   private datasetProvider = new DatasetKnowledgeProvider();
   private relationshipProvider = new RelationshipKnowledgeProvider();
+  private functionalityProvider = new FunctionalityKnowledgeProvider();
 
   async index(record: KnowledgeRecord): Promise<void> {
     await knowledgeStore.put(record);
@@ -132,7 +184,9 @@ export class KnowledgeService {
     const texts = records.map((r) => r.text);
     if (texts.length) {
       try {
-        await embeddingService.embedMany(texts);
+        // Pre-warm both the model and the cache so later searches hit.
+        const { vectors } = await embeddingService.embedMany(texts);
+        this.cacheVectors(texts, vectors);
       } catch {
         /* non-critical */
       }
@@ -145,8 +199,23 @@ export class KnowledgeService {
   ): Promise<KnowledgeResult[]> {
     const n = normalizeSearchOpts(query, opts);
     const workspaceId = n.workspaceId;
+    // Request-scoped provider memo: the builder pass + the main pass in
+    // one answer turn share provider outputs (no cross-request sharing).
+    const memoGet = async (
+      key: string,
+      load: () => Promise<KnowledgeRecord[]>,
+    ): Promise<KnowledgeRecord[]> => {
+      const hit = n.memo.get(key);
+      if (hit) return hit;
+      const recs = await load().catch(() => [] as KnowledgeRecord[]);
+      n.memo.set(key, recs);
+      return recs;
+    };
 
     let candidates: KnowledgeRecord[] = [];
+    // Empty workspace scope is meaningless work (IDB key "" + provider
+    // passes + embeddings for nothing). "all" scope stays open by design.
+    if (!workspaceId && n.scope !== "all" && !n.notebookId) return [];
     if (n.scope === "all") {
       candidates = await knowledgeStore.getAll().catch(() => []);
     } else if (n.activeCellId) {
@@ -185,12 +254,12 @@ export class KnowledgeService {
     if (workspaceId) {
       try {
         const [dsRecs, relRecs] = await Promise.all([
-          this.datasetProvider
-            .provide(workspaceId)
-            .catch(() => [] as KnowledgeRecord[]),
-          this.relationshipProvider
-            .provide(workspaceId)
-            .catch(() => [] as KnowledgeRecord[]),
+          memoGet(`dataset::${workspaceId}`, () =>
+            this.datasetProvider.provide(workspaceId),
+          ),
+          memoGet(`relationship::${workspaceId}`, () =>
+            this.relationshipProvider.provide(workspaceId),
+          ),
         ]);
         const seen = new Set(candidates.map((c) => c.id));
         for (const r of [...dsRecs, ...relRecs])
@@ -199,8 +268,13 @@ export class KnowledgeService {
     }
 
     if (n.includeSystemKnowledge) {
-      const dict = await this.dictProvider.provide().catch(() => []);
-      candidates.push(...dict);
+      const [dict, funcs] = await Promise.all([
+        memoGet(`dict::${query}`, () => this.dictProvider.provide(query)),
+        memoGet(`funcs::${query}`, () =>
+          this.functionalityProvider.provide(workspaceId, undefined, query),
+        ),
+      ]);
+      candidates.push(...dict, ...funcs);
     }
 
     if (n.kinds && n.kinds.length) {
@@ -263,7 +337,7 @@ export class KnowledgeService {
 
     let queryVec: Float32Array | null = null;
     try {
-      queryVec = await embeddingService.embed(query);
+      [queryVec] = await this.embedTextsCached([query]);
     } catch {
       return candidates
         .slice(0, n.limit)
@@ -273,17 +347,35 @@ export class KnowledgeService {
     const texts = candidates.map((c) => c.text);
     let vectors: Float32Array[] = [];
     try {
-      const res = await embeddingService.embedMany(texts);
-      vectors = res.vectors;
+      vectors = await this.embedTextsCached(texts);
     } catch {
       return candidates
         .slice(0, n.limit)
         .map((r) => ({ record: r, score: SCORE_FALLBACK }));
     }
 
+    const denseScores = vectors.map((v) =>
+      v ? cosineSimilarity(queryVec!, v) : 0,
+    );
+    // Hybrid fusion: dense rank + BM25 rank via RRF (scale-free — the two
+    // live on incomparable scales). Hard-requirement boosts apply below.
+    let fusedScores = denseScores;
+    if (HYBRID_ENABLED) {
+      // Expansion feeds the lexical path only (dense keeps raw intent).
+      const ruleBag = QUERY_EXPANSION_ENABLED ? expandQueryTerms(query) : query;
+      const lexicalQuery = n.extraTerms
+        ? mergeTermBags(ruleBag, n.extraTerms)
+        : ruleBag;
+      const lexical = bm25Scores(lexicalQuery, texts);
+      fusedScores = rrfFuse(
+        [rankIndices(denseScores), rankIndices(lexical)],
+        candidates.length,
+      );
+    }
+
     const scored: KnowledgeResult[] = candidates.map((rec, i) => {
       const v = vectors[i];
-      let score = v ? cosineSimilarity(queryVec!, v) : 0;
+      let score = fusedScores[i];
       const status = (rec.metadata as { status?: string }).status;
       if (status === "active") score += SCORE_BOOSTS.statusActive;
       else if (status === "stale") score += SCORE_BOOSTS.statusStale;
@@ -323,7 +415,73 @@ export class KnowledgeService {
     });
 
     scored.sort((a, b) => b.score - a.score);
-    return scored.slice(0, n.limit);
+    if (!RERANK_ENABLED) return scored.slice(0, n.limit);
+    // Second stage: rerank the head for precision, MMR for diversity.
+    const pool = scored.slice(
+      0,
+      Math.max(n.limit, Math.min(scored.length, RERANK_CANDIDATES)),
+    );
+    const reranked = await rerankCandidates(query, pool);
+    return mmrSelect(reranked, n.limit).slice(0, n.limit);
+  }
+
+  /**
+   * Embed with EmbeddingCache read-through: per-query cost drops from
+   * 1+N model forwards to 1+misses. Hits also refresh LRU via rewrite.
+   * Throws on model failure (callers fall back to SCORE_FALLBACK slice).
+   */
+  private async embedTextsCached(texts: string[]): Promise<Float32Array[]> {
+    const keys = await Promise.all(texts.map((t) => buildEmbeddingKey(t)));
+    const out = new Array<Float32Array | null>(texts.length).fill(null);
+    const missIdx: number[] = [];
+    await Promise.all(
+      keys.map(async (k, i) => {
+        const hit = await embeddingCache.get(k);
+        if (hit) out[i] = hit.vector;
+        else missIdx.push(i);
+      }),
+    );
+    if (missIdx.length > 0) {
+      const { vectors } = await embeddingService.embedMany(
+        missIdx.map((i) => texts[i]),
+      );
+      missIdx.forEach((origI, m) => {
+        out[origI] = vectors[m];
+      });
+      this.cacheVectors(
+        missIdx.map((i) => texts[i]),
+        vectors,
+        missIdx.map((i) => keys[i]),
+      );
+    }
+    return out as Float32Array[];
+  }
+
+  /** Fire-and-forget cache populate (best-effort — never throws). */
+  private cacheVectors(
+    texts: string[],
+    vectors: Float32Array[],
+    keys?: string[],
+  ): void {
+    void (async () => {
+      try {
+        const resolvedKeys =
+          keys ?? (await Promise.all(texts.map((t) => buildEmbeddingKey(t))));
+        const now = Date.now();
+        const entries: EmbeddingEntry[] = texts.map((_, i) => ({
+          embeddingKey: resolvedKeys[i],
+          model: EMBED_MODEL,
+          version: EMBED_CACHE_VERSION,
+          dimension: vectors[i]?.length ?? 0,
+          vector: vectors[i],
+          createdAt: now,
+          lastAccessedAt: now,
+        }));
+        await embeddingCache.setMany(entries);
+      } catch {
+        /* cache is best-effort */
+      }
+    })();
   }
 
   async getByCell(cellId: string): Promise<KnowledgeRecord[]> {
